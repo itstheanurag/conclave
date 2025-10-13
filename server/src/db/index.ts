@@ -1,6 +1,7 @@
 import { CONFIG } from "config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import * as schema from "@src/db/schema";
 
 const pool = new Pool({
   connectionString: CONFIG.DB.URL,
@@ -12,10 +13,6 @@ const pool = new Pool({
   idleTimeoutMillis: 30000,
 });
 
-pool.on("connect", () => {
-  console.log("[DB] Connection established ✅");
-});
-
 pool.on("error", (err: unknown) => {
   console.error("[DB] Unexpected error:", err);
 });
@@ -24,18 +21,17 @@ pool.on("remove", () => {
   console.log("[DB] Connection closed ❌");
 });
 
-const originalQuery = pool.query.bind(pool);
-pool.query = async (...args: any[]) => {
-  const start = Date.now();
-  const result = await originalQuery(...args);
-  const duration = Date.now() - start;
-  console.log(`[DB] Executed query in ${duration}ms:`, args[0]);
-  return result;
-};
+(async () => {
+  try {
+    const client = await pool.connect();
+    console.log("[DB] Initial connection successful ✅");
+    client.release();
+  } catch (err) {
+    console.error("[DB] Initial connection failed ❌", err);
+  }
+})();
 
-export const db = drizzle(pool, {
-  logger: true,
-});
+export const db = drizzle(pool, { logger: true, schema });
 
 export async function closeDb() {
   await pool.end();
