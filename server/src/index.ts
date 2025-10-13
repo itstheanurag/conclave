@@ -1,21 +1,14 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-
-const PORT = Number(process.env.PORT) || 3000;
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .filter(Boolean);
-const ALLOWED_METHODS = (
-  process.env.ALLOWED_METHODS || "GET,POST,OPTIONS"
-).split(",");
+import { CONFIG } from "config";
 
 const app = new Hono();
 
 app.use(
   "*",
   cors({
-    origin: ALLOWED_ORIGINS,
-    allowMethods: ALLOWED_METHODS,
+    origin: CONFIG.CORS.ALLOWED_METHODS,
+    allowMethods: CONFIG.CORS.ALLOWED_METHODS,
     credentials: true,
   })
 );
@@ -23,8 +16,8 @@ app.use(
 app.get("/", (c) => c.text("Hello Hono!"));
 
 Bun.serve({
-  port: PORT,
+  port: CONFIG.APP.PORT || 3000,
   fetch: app.fetch,
 });
 
-console.log(`✅ Server running on http://localhost:${PORT}`);
+console.log(`✅ Server running on http://localhost:${CONFIG.APP.PORT || 3000}`);
