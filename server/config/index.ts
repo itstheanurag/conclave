@@ -12,5 +12,5 @@ export const CONFIG = {
     ALLOWED_ORIGINS,
     ALLOWED_METHODS,
   },
-  DB: { URL: process.env.DATBASE_URL },
+  DB: { URL: process.env.DATABASE_URL! },
 };
