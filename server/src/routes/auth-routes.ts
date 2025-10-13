@@ -1,5 +1,8 @@
 import { Hono } from "hono";
 import { auth } from "@src/lib/auth";
+import { db } from "@src/db";
+import { session, user } from "@src/db/schema";
+import { and, eq, gt } from "drizzle-orm";
 
 const authRoutes = new Hono();
 
@@ -56,27 +59,43 @@ authRoutes.get("/me", async (c) => {
     }
 
     const token = authHeader.replace("Bearer ", "").trim();
-    const db = c.get("database");
 
-    const sessionData = await db.query.session.findFirst({
-      where: (session, { eq, gt }) =>
-        eq(session.token, token) && gt(session.expiresAt, new Date()),
-      with: {
-        user: true,
-      },
-    });
+    // console.log(
+    //   await auth.api.getSession({ headers: { ...c.req.header } }),
+    //   "sesion from the auth"
+    // );
 
-    console.log("Session found:", sessionData);
+    const [sessionWithUser] = await db
+      .select({
+        sessionId: session.id,
+        sessionToken: session.token,
+        sessionExpiresAt: session.expiresAt,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+      })
+      .from(session)
+      .leftJoin(user, eq(session.userId, user.id))
+      .where(and(eq(session.token, token), gt(session.expiresAt, new Date())))
+      .limit(1);
 
-    if (!sessionData) return c.json({ error: "Unauthorized" }, 401);
+    // console.log(sessionWithUser);
 
-    const user = await db.query.user.findFirst({
-      where: (user, { eq }) => eq(user.id, sessionData.userId),
-    });
+    if (!sessionWithUser) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
 
     return c.json({
-      user,
-      session: { token: sessionData.token, expiresAt: sessionData.expiresAt },
+      session: {
+        id: sessionWithUser.sessionId,
+        token: sessionWithUser.sessionToken,
+        expiresAt: sessionWithUser.sessionExpiresAt,
+      },
+      user: {
+        id: sessionWithUser.userId,
+        name: sessionWithUser.userName,
+        email: sessionWithUser.userEmail,
+      },
     });
   } catch (err: any) {
     console.error("[Auth] Me error:", err);
