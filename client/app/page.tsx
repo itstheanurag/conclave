@@ -1,11 +1,5 @@
-import Footer from "@/component/home/footer";
+import HomeSection from "@/components/home/home";
 
 export default function Home() {
-  return (
-    <>
-      <div className="h-screen w-full"></div>
-
-      <Footer />
-    </>
-  );
+  return <HomeSection />;
 }
