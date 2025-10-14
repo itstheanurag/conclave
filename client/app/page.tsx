@@ -1,3 +1,11 @@
+import Footer from "@/component/home/footer";
+
 export default function Home() {
-  return <h1>Hello from the server</h1>;
+  return (
+    <>
+      <div className="h-screen w-full"></div>
+
+      <Footer />
+    </>
+  );
 }
