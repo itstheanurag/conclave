@@ -33,13 +33,11 @@ const Navbar = () => {
 
           {/* Auth + Theme buttons */}
           <div className="flex items-center gap-2">
-            <button className="btn btn-outline btn-sm rounded-lg">Login</button>
             <button className="btn btn-primary btn-sm rounded-lg">
-              Sign Up
+              Get Started
             </button>
+            <ThemeController />
           </div>
-
-          <ThemeController />
         </div>
 
         <button
@@ -68,11 +66,8 @@ const Navbar = () => {
 
           <div className="flex w-full flex-col gap-2">
             <div className="flex gap-6 w-full">
-              <button className="btn btn-outline btn-sm  rounded-lg">
-                Login
-              </button>
               <button className="btn btn-primary btn-sm rounded-lg">
-                Sign Up
+                Get Started
               </button>
 
               <ThemeController />
