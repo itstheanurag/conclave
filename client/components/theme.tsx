@@ -1,9 +1,15 @@
 "use client";
 import { useTheme } from "next-themes";
+import React, { useEffect, useState } from "react";
 
 export default function ThemeController() {
   const themes = ["sunset", "nord", "dim", "lofi", "halloween"];
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null; // Prevent SSR/client mismatch
 
   return (
     <div className="dropdown dropdown-end">
@@ -14,7 +20,7 @@ export default function ThemeController() {
             <button
               onClick={() => setTheme(t)}
               className={`btn btn-sm btn-ghost w-full justify-start rounded-lg capitalize ${
-                theme === t ? "border border-primary text-primary" : ""
+                resolvedTheme === t ? "border border-primary text-primary" : ""
               }`}
             >
               {t}
