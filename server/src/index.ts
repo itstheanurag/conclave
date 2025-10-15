@@ -1,10 +1,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { CONFIG } from "config";
 import routes from "./routes";
 import { db } from "./db";
 
 const app = new Hono();
+
+app.use("*", logger());
 
 app.use(
   "*",

@@ -15,19 +15,15 @@ const owner: Role = ac.newRole({
   organization: ["update"],
 });
 
-const developer: Role = ac.newRole({
-  project: ["create", "update", "delete"],
-  organization: ["update"],
-});
-
 export const organizationOptions: OrganizationOptions = {
   teams: { enabled: true },
   ac,
+
   roles: {
     owner,
     admin,
-    developer,
   },
+
   dynamicAccessControl: {
     enabled: true,
   },

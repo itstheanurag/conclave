@@ -60,11 +60,6 @@ authRoutes.get("/me", async (c) => {
 
     const token = authHeader.replace("Bearer ", "").trim();
 
-    // console.log(
-    //   await auth.api.getSession({ headers: { ...c.req.header } }),
-    //   "sesion from the auth"
-    // );
-
     const [sessionWithUser] = await db
       .select({
         sessionId: session.id,

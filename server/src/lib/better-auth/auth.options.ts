@@ -1,10 +1,14 @@
 import { db } from "@src/db";
 import { BetterAuthOptions } from "better-auth/*";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import * as schema from "@src/db/schema";
 
 export const betterAuthOptions: BetterAuthOptions = {
-  database: drizzleAdapter(db, { provider: "pg" }),
+  basePath: "auth",
+  database: drizzleAdapter(db, { provider: "pg", schema }),
+
   emailAndPassword: { enabled: true },
+
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID || "",
@@ -15,13 +19,13 @@ export const betterAuthOptions: BetterAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     },
   },
+
   session: {
-    modelName: "jwt",
-    secret: process.env.JWT_SECRET! || ""
-    expiresIn: 60 * 60 * 24 * 7, // fallback
-    updateAge: 60 * 60 * 24, // refresh token rotation interval
-    cookieCache: { enabled: false }, // disable cookies
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 2,
+    cookieCache: { enabled: false },
   },
+
   user: {
     additionalFields: {
       role: { type: "string", defaultValue: "user", input: true },
