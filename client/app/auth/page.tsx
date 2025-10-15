@@ -1,18 +1,14 @@
 "use client";
-import React, { useState } from "react";
-import LoginForm from "./forms/signin";
+import { useAtom } from "jotai";
+import { authModeAtom } from "@/atoms/auth";
 import SignupForm from "./forms/signup";
-
+import LoginForm from "./forms/signin";
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [authMode] = useAtom(authModeAtom);
 
   return (
-    <div className="space-y-6">
-      {isLogin ? (
-        <LoginForm onSwitch={() => setIsLogin(false)} />
-      ) : (
-        <SignupForm onSwitch={() => setIsLogin(true)} />
-      )}
+    <div className="flex justify-center items-center ">
+      {authMode === "login" ? <LoginForm /> : <SignupForm />}
     </div>
   );
 }

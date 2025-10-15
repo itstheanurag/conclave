@@ -1,42 +1,112 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useAtom } from "jotai";
+import { loginAtom, authModeAtom } from "@/atoms/auth";
+import { client } from "@/lib/auth-client";
+import { toast } from "sonner";
 
-export default function LoginForm({ onSwitch }: { onSwitch?: () => void }) {
+export default function LoginForm() {
+  const [login, setLogin] = useAtom(loginAtom);
+  const [, setAuthMode] = useAtom(authModeAtom);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
+    if (rememberedEmail) setLogin({ email: rememberedEmail });
+  }, [setLogin]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const t = toast.loading("Signing in...");
+
+    try {
+      const result = await client.signIn.email({
+        email: login.email,
+        password: login.password,
+      });
+
+      if (result.error) {
+        toast.error(result.error.statusText, { id: t });
+        return;
+      }
+
+      toast.success("Signed in successfully!", { id: t });
+
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", login.email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sign in.", { id: t });
+    }
+  };
+
   return (
-    <div className="card bg-base-300 shadow-md">
+    <div className="card py-4 bg-base-300">
       <div className="card-body">
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => e.preventDefault()}
-        >
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          {/* Email */}
           <div className="form-control">
-            <label className="label">
+            <label className="label mb-1">
               <span className="label-text font-medium">Email</span>
             </label>
             <input
               type="email"
               placeholder="you@example.com"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full focus:outline-none focus:ring-0 focus:border-base-300"
               required
+              value={login.email}
+              onChange={(e) => setLogin({ email: e.target.value })}
             />
           </div>
 
+          {/* Password */}
           <div className="form-control">
-            <label className="label">
+            <label className="label mb-1">
               <span className="label-text font-medium">Password</span>
             </label>
             <input
               type="password"
               placeholder="********"
-              className="input input-bordered w-full"
+              className="input input-bordered w-full focus:outline-none focus:ring-0 focus:border-base-300 mb-1"
               required
+              value={login.password}
+              onChange={(e) => setLogin({ password: e.target.value })}
             />
-            <label className="label">
+            <div className="form-control flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  className="w-4 h-4 rounded-sm checkbox-primary"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <label htmlFor="rememberMe" className="label-text">
+                  Remember me
+                </label>
+              </div>
+
               <a href="#" className="label-text-alt link link-hover">
                 Forgot password?
               </a>
-            </label>
+            </div>
           </div>
+
+          {/* <div className="form-control flex-row items-center gap-3">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              className="w-4 h-4 rounded-sm checkbox-primary"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <label htmlFor="rememberMe" className="label-text pl-3">
+              Remember me
+            </label>
+          </div> */}
 
           <button type="submit" className="btn btn-primary w-full">
             Sign In
@@ -61,7 +131,7 @@ export default function LoginForm({ onSwitch }: { onSwitch?: () => void }) {
             <button
               type="button"
               className="link link-primary"
-              onClick={onSwitch}
+              onClick={() => setAuthMode("register")}
             >
               Create one
             </button>
