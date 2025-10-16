@@ -1,8 +1,10 @@
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
+export const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
   .split(",")
   .filter(Boolean);
 
-const ALLOWED_METHODS = (
+// console.log(ALLOWED_ORIGINS);
+
+export const ALLOWED_METHODS = (
   process.env.ALLOWED_METHODS || "GET,POST,OPTIONS"
 ).split(",");
 

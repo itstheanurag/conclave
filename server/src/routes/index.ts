@@ -4,9 +4,8 @@ import { Hono } from "hono";
 
 const routes = new Hono();
 
-// routes.route("/auth", authRoutes);
 routes.all("/auth/*", async (c) => {
-  return auth.handler(c.req.raw);
+  return await auth.handler(c.req.raw);
 });
 
 export default routes;

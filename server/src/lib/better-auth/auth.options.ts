@@ -2,6 +2,7 @@ import { db } from "@src/db";
 import { BetterAuthOptions } from "better-auth/*";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import * as schema from "@src/db/schema";
+import { ALLOWED_ORIGINS } from "config";
 
 export const betterAuthOptions: BetterAuthOptions = {
   basePath: "",
@@ -30,4 +31,5 @@ export const betterAuthOptions: BetterAuthOptions = {
       permissions: { type: "string[]", defaultValue: [] },
     },
   },
+  trustedOrigins: ALLOWED_ORIGINS,
 };

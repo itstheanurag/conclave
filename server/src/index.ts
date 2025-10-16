@@ -7,17 +7,28 @@ import { db } from "./db";
 
 const app = new Hono();
 
+// Basic request logging
 app.use("*", logger());
 
-app.use(
-  "*",
-  cors({
-    origin: CONFIG.CORS.ALLOWED_ORIGINS,
-    allowMethods: CONFIG.CORS.ALLOWED_METHODS,
-    credentials: true,
-  })
-);
+// Custom middleware for detailed request & response logs
+// app.use("*", async (c, next) => {
+//   const start = Date.now();
+//   console.log(`➡️  [Request] ${c.req.method} ${c.req.url}`);
+//   console.log("Headers:", c.req);
+//   console.log("Body:", await c.req.text());
 
+//   await next(); // proceed to the next middleware/route
+
+//   const duration = Date.now() - start;
+//   // status is available via c.res
+//   console.log(
+//     `⬅️  [Response] ${c.req.method} ${c.req.url} -> ${
+//       c.res.status
+//     } ${JSON.stringify(c.res)} (${duration}ms,)`
+//   );
+// });
+
+// Set database in context
 app.use("*", (c, next) => {
   c.set("database", db);
   return next();
