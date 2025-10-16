@@ -178,7 +178,7 @@ export async function handleSocialAuth({
 // ────────────────
 
 export async function signInWithGithub() {
-  return handleSocialAuth({
+  return await handleSocialAuth({
     provider: "github",
     mode: "signin",
     callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
@@ -189,7 +189,7 @@ export async function signInWithGithub() {
 }
 
 export async function signInWithGoogle() {
-  return handleSocialAuth({
+  return await handleSocialAuth({
     provider: "google",
     mode: "signin",
     callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
@@ -200,7 +200,7 @@ export async function signInWithGoogle() {
 }
 
 export async function registerWithGoogle() {
-  return handleSocialAuth({
+  return await handleSocialAuth({
     provider: "google",
     mode: "register",
     callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
@@ -211,7 +211,7 @@ export async function registerWithGoogle() {
 }
 
 export async function registerWithGithub() {
-  return handleSocialAuth({
+  return await handleSocialAuth({
     provider: "github",
     mode: "register",
     callbackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,

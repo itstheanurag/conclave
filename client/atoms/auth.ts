@@ -1,3 +1,5 @@
+"use client";
+
 import { atom } from "jotai";
 
 export const fullNameAtom = atom("");
@@ -15,28 +17,13 @@ export const userAtom = atom<{
 
 export const isAuthenticatedAtom = atom(false);
 
+export const rememberMeAtom = atom(false);
+
+export const loadingAtom = atom(false);
+
 export const passwordsMatchAtom = atom(
   (get) => get(passwordAtom) === get(confirmPasswordAtom)
 );
-
-export const isRegisterFormValidAtom = atom((get) => {
-  const name = get(fullNameAtom);
-  const email = get(emailAtom);
-  const pass = get(passwordAtom);
-  const confirm = get(confirmPasswordAtom);
-  return (
-    name.trim() !== "" &&
-    email.trim() !== "" &&
-    pass.length >= 8 &&
-    confirm === pass
-  );
-});
-
-export const isLoginFormValidAtom = atom((get) => {
-  const email = get(emailAtom);
-  const pass = get(passwordAtom);
-  return email.trim() !== "" && pass.trim() !== "";
-});
 
 export const loginAtom = atom(
   (get) => ({
@@ -49,28 +36,23 @@ export const loginAtom = atom(
   }
 );
 
-export const registerAtom = atom(
-  (get) => ({
-    fullName: get(fullNameAtom),
-    email: get(emailAtom),
-    password: get(passwordAtom),
-    confirmPassword: get(confirmPasswordAtom),
-    isValid: get(isRegisterFormValidAtom),
-  }),
-  (
-    get,
-    set,
-    update: Partial<{
-      fullName: string;
-      email: string;
-      password: string;
-      confirmPassword: string;
-    }>
-  ) => {
-    if (update.fullName !== undefined) set(fullNameAtom, update.fullName);
-    if (update.email !== undefined) set(emailAtom, update.email);
-    if (update.password !== undefined) set(passwordAtom, update.password);
-    if (update.confirmPassword !== undefined)
-      set(confirmPasswordAtom, update.confirmPassword);
-  }
-);
+export const isRegisterFormValidAtom = atom((get) => {
+  const name = get(fullNameAtom);
+  const email = get(emailAtom);
+  const pass = get(passwordAtom);
+  const confirm = get(confirmPasswordAtom);
+
+  return (
+    name.trim() !== "" &&
+    email.trim() !== "" &&
+    pass.length >= 8 &&
+    confirm === pass
+  );
+});
+
+// Derived atom for login form validity
+export const isLoginFormValidAtom = atom((get) => {
+  const email = get(emailAtom);
+  const pass = get(passwordAtom);
+  return email.trim() !== "" && pass.trim() !== "";
+});
