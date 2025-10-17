@@ -15,8 +15,6 @@ export const userAtom = atom<{
   name: string;
 } | null>(null);
 
-export const isAuthenticatedAtom = atom(false);
-
 export const rememberMeAtom = atom(false);
 
 export const loadingAtom = atom(false);
