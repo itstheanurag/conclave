@@ -1,6 +1,4 @@
 "use client";
-
-import { getDefaultStore } from "jotai";
 import { client } from "@/lib/auth-client";
 import { toastError, toastLoading, toastSuccess } from "@/lib/toast";
 import {
@@ -9,8 +7,7 @@ import {
   loadingSignUpFormAtom,
   loadingSignInFormAtom,
 } from "@/atoms";
-
-const store = getDefaultStore();
+import { store } from "@/lib";
 
 // ─────────────────────────────
 // Helpers
