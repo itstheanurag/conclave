@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { themeAtom } from "@/atoms/ui";
 import { cn } from "@/lib/utils";
+import Button from "./ui/Button";
 
 export default function ThemeController({ className }: { className?: string }) {
   const themes = ["sunset", "nord", "dim", "lofi", "halloween"];
@@ -38,7 +39,7 @@ export default function ThemeController({ className }: { className?: string }) {
       >
         {themes.map((t) => (
           <li key={t}>
-            <button
+            <Button
               onClick={() => {
                 setTheme(t);
                 setCurrentTheme(t);
@@ -49,7 +50,7 @@ export default function ThemeController({ className }: { className?: string }) {
               )}
             >
               {t}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>
