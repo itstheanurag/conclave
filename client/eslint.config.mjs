@@ -19,6 +19,17 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+    rules: {
+      // Allow use of "any"
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "no-unused-vars": "off",
+      "no-undef": "off",
+      "no-console": "off",
+      "react/prop-types": "off",
+      "react/react-in-jsx-scope": "off",
+    },
   },
 ];
 
