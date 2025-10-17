@@ -106,9 +106,11 @@ export default function LoginForm() {
               <button
                 type="button"
                 className="label-text-alt link link-hover"
-                onClick={() => updateField("showPassword", !form.showPassword)}
+                onClick={() =>
+                  console.log("forgot password needs to be implemented")
+                }
               >
-                {form.showPassword ? "Hide" : "Show"} password
+                forgot password
               </button>
             </div>
           </div>
