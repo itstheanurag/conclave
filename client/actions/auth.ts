@@ -8,6 +8,7 @@ import {
   rememberMeAtom,
   loadingAtom,
   loginAtom,
+  sessionAtom,
 } from "@/atoms";
 import { client } from "@/lib/auth-client";
 import { toastError, toastLoading, toastSuccess } from "@/lib/toast";
@@ -90,10 +91,10 @@ export async function handleEmailSignup() {
   }
 }
 
+// or js-cookie on client
+
 export async function handleEmailLogin() {
   const login = store.get(loginAtom);
-  const rememberMe = store.get(rememberMeAtom);
-
   const t = toastLoading("Signing in...");
   store.set(loadingAtom, true);
 
@@ -111,16 +112,21 @@ export async function handleEmailLogin() {
     toastSuccess("Signed in successfully!", t);
 
     // Remember email if checkbox checked
-    if (rememberMe) {
+    if (store.get(rememberMeAtom)) {
       localStorage.setItem("rememberedEmail", login.email);
     } else {
       localStorage.removeItem("rememberedEmail");
     }
 
+    if (result?.data?.token) {
+      // Store the session token in a cookie
+      document.cookie = `better-auth.session=${result.data.token}; path=/; Secure; SameSite=Lax`;
+      // Optionally store user info locally for client-side access
+      localStorage.setItem("user", JSON.stringify(result.data.user));
+    }
     return result;
   } catch (err: any) {
     toastError(err.message || "Failed to sign in.", t);
-
     return null;
   } finally {
     store.set(loadingAtom, false);
@@ -219,4 +225,18 @@ export async function registerWithGithub() {
     successMessage: "Registered successfully!",
     errorMessage: "GitHub registration failed.",
   });
+}
+
+export async function logout() {
+  try {
+    const result = await client.signOut();
+    console.log(result, "logout data");
+    document.cookie = `better-auth.session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax`;
+    localStorage.removeItem("user");
+    store.set(sessionAtom, null);
+    return result;
+  } catch (err) {
+    console.error("Logout failed", err);
+    throw err;
+  }
 }

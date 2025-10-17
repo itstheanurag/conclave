@@ -31,8 +31,12 @@ export default function LoginForm() {
 
     if (!isValid) return;
 
-    await handleEmailLogin();
-    router.push("/dashboard");
+    const result = await handleEmailLogin();
+
+    console.log(result);
+    if (result) {
+      router.replace("/dashboard");
+    }
   };
 
   return (

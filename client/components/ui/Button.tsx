@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "ghost";
+  variant?: "primary" | "ghost" | "outline";
   size?: "sm" | "md";
 }
 
@@ -20,6 +20,7 @@ export default function Button({
         {
           "btn-primary": variant === "primary",
           "btn-ghost": variant === "ghost",
+          "btn-outline": variant === "outline",
           "btn-sm": size === "sm",
         },
         className
