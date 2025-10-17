@@ -2,14 +2,25 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { db } from "./db";
-import { CONFIG } from "config";
+import { ALLOWED_METHODS, ALLOWED_ORIGINS, CONFIG } from "config";
 import routes from "./routes";
-import { Scalar } from "@scalar/hono-api-reference"; // ✅ official Scalar Hono integration
+import { Scalar } from "@scalar/hono-api-reference";
 
 const app = new OpenAPIHono();
 
-// --- Middlewares ---
-app.use("*", cors());
+app.use(
+  "/*",
+  cors({
+    origin: (origin) => {
+      // handle same-origin or server-side requests
+      if (!origin) return null;
+      return ALLOWED_ORIGINS.includes(origin) ? origin : null;
+    },
+    allowMethods: ALLOWED_METHODS,
+    credentials: true,
+  })
+);
+
 app.use("*", logger());
 app.use("*", (c, next) => {
   c.set("database", db);
@@ -30,14 +41,13 @@ app.doc("/openapi.json", {
   },
 });
 
-
 app.get(
   "/docs",
   Scalar({
     spec: {
       url: "/openapi.json",
     },
-    layout: "modern", 
+    layout: "modern",
     theme: "deepSpace",
   })
 );

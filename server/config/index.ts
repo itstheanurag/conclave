@@ -12,7 +12,7 @@ const EnvSchema = z.object({
         .map((v) => v.trim())
         .filter(Boolean)
     )
-    .pipe(z.array(z.string().url())),
+    .pipe(z.array(z.url())),
 
   ALLOWED_METHODS: z
     .string()
@@ -75,3 +75,4 @@ export const CONFIG = {
 };
 
 export const { ALLOWED_ORIGINS, ALLOWED_METHODS } = CONFIG.CORS;
+console.log(ALLOWED_ORIGINS);

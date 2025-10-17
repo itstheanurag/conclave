@@ -8,6 +8,7 @@ export const betterAuthOptions: BetterAuthOptions = {
   basePath: "",
   database: drizzleAdapter(db, { provider: "pg", schema }),
   emailAndPassword: { enabled: true },
+  trustedOrigins: ALLOWED_ORIGINS,
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID || "",
@@ -31,5 +32,4 @@ export const betterAuthOptions: BetterAuthOptions = {
       permissions: { type: "string[]", defaultValue: [] },
     },
   },
-  trustedOrigins: ALLOWED_ORIGINS,
 };
