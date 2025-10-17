@@ -10,6 +10,7 @@ import {
   BarChart,
   ChevronLeft,
   ChevronRight,
+  Key,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -19,6 +20,7 @@ interface SidebarProps {
 
 const navigationItems = [
   { id: "overview", label: "Overview", icon: Home },
+  { id: "api_keys", label: "ApiKeys", icon: Key },
   { id: "meetings", label: "Meetings", icon: Video },
   { id: "schedule", label: "Schedule", icon: Calendar },
   { id: "teams", label: "Teams", icon: Users },
