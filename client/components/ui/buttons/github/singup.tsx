@@ -2,11 +2,11 @@
 
 import { useAtom } from "jotai";
 import { useRouter } from "next/navigation";
-import { loadingAtom } from "@/atoms";
+import { loadingSignUpFormAtom } from "@/atoms";
 import { registerWithGithub } from "@/actions";
 
 export function GithubSignUpButton() {
-  const [loading, setLoading] = useAtom(loadingAtom);
+  const [loading, setLoading] = useAtom(loadingSignUpFormAtom);
   const router = useRouter();
 
   const handleClick = async () => {

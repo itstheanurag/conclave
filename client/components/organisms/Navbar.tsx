@@ -130,7 +130,19 @@ const DashboardNavbar = ({ sessionData }: { sessionData: SessionData }) => {
 export default function Navbar() {
   const { session, loading } = useSession();
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <nav className="sticky top-0 z-50 bg-base-300/60 backdrop-blur-md shadow-sm border-b border-base-200">
+        <div className="mx-auto px-4 py-3 flex items-center justify-between max-w-7xl">
+          <div className="h-6 w-24 bg-base-200 rounded animate-pulse" />
+          <div className="flex items-center gap-4">
+            <div className="h-8 w-20 bg-base-200 rounded animate-pulse" />
+            <div className="h-8 w-8 bg-base-200 rounded-full animate-pulse" />
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return session ? <DashboardNavbar sessionData={session} /> : <SimpleNavbar />;
 }

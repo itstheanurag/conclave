@@ -2,12 +2,12 @@
 
 import { useAtom } from "jotai";
 import { useRouter } from "next/navigation";
-import { loadingAtom } from "@/atoms";
 import { signInWithGithub } from "@/actions";
+import { loadingSignInFormAtom } from "@/atoms";
 
 export function GithubSignInButton() {
-  const [loading, setLoading] = useAtom(loadingAtom);
-  const router = useRouter();
+  const [loading, setLoading] = useAtom(loadingSignInFormAtom);
+  // const router = useRouter();
 
   const handleClick = async () => {
     setLoading(true);
@@ -15,7 +15,7 @@ export function GithubSignInButton() {
     const result = await signInWithGithub();
 
     if (result) {
-      router.push("/dashboard");
+      // router.push("/dashboard");
     }
   };
 

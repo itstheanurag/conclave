@@ -24,11 +24,18 @@ export default function ThemeController({ className }: { className?: string }) {
   if (!mounted) return null;
 
   return (
-    <div className="dropdown dropdown-end">
-      <button className="btn btn-outline rounded-lg btn-sm capitalize w-full">
+    <div className={cn("dropdown dropdown-end", className)}>
+      <div
+        tabIndex={0}
+        role="button"
+        className="btn btn-outline btn-sm rounded-lg capitalize"
+      >
         {currentTheme}
-      </button>
-      <ul className="dropdown-content bg-base-100 border border-base-200 rounded-xl w-full mt-2 shadow-lg p-2 z-[1]">
+      </div>
+      <ul
+        tabIndex={0}
+        className="dropdown-content menu bg-base-100 border border-base-200 rounded-xl w-40 mt-2 shadow-lg p-2 z-[100]"
+      >
         {themes.map((t) => (
           <li key={t}>
             <button
@@ -36,9 +43,10 @@ export default function ThemeController({ className }: { className?: string }) {
                 setTheme(t);
                 setCurrentTheme(t);
               }}
-              className={`btn btn-sm btn-ghost w-full justify-start rounded-lg capitalize ${
-                currentTheme === t ? "border border-primary text-primary" : ""
-              }`}
+              className={cn(
+                "btn btn-sm btn-ghost w-full justify-start rounded-lg capitalize",
+                currentTheme === t && "border border-primary text-primary"
+              )}
             >
               {t}
             </button>

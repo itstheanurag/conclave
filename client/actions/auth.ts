@@ -1,50 +1,20 @@
 "use client";
 
-import {
-  fullNameAtom,
-  emailAtom,
-  passwordAtom,
-  confirmPasswordAtom,
-  rememberMeAtom,
-  loadingAtom,
-  loginAtom,
-  sessionAtom,
-} from "@/atoms";
+import { getDefaultStore } from "jotai";
 import { client } from "@/lib/auth-client";
 import { toastError, toastLoading, toastSuccess } from "@/lib/toast";
-import { getDefaultStore } from "jotai";
+import {
+  authFormAtom,
+  authModeAtom,
+  loadingSignUpFormAtom,
+  loadingSignInFormAtom,
+} from "@/atoms";
 
-// ─────────────────────────────
-// Store (for accessing jotai atoms outside React)
-// ─────────────────────────────
 const store = getDefaultStore();
 
 // ─────────────────────────────
-// LOGIN / REGISTER UPDATERS
+// Helpers
 // ─────────────────────────────
-export const updateLogin = (update: { email?: string; password?: string }) => {
-  if (update.email !== undefined) store.set(emailAtom, update.email);
-  if (update.password !== undefined) store.set(passwordAtom, update.password);
-};
-
-export const updateRegister = (update: {
-  fullName?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-}) => {
-  if (update.fullName !== undefined) store.set(fullNameAtom, update.fullName);
-  if (update.email !== undefined) store.set(emailAtom, update.email);
-  if (update.password !== undefined) store.set(passwordAtom, update.password);
-  if (update.confirmPassword !== undefined)
-    store.set(confirmPasswordAtom, update.confirmPassword);
-};
-
-// ─────────────────────────────
-// AUTH ACTIONS
-// ─────────────────────────────
-
-// helper for rememberMe and email persistence
 function handleRememberMe(email: string, rememberMe: boolean) {
   if (rememberMe) {
     localStorage.setItem("rememberedEmail", email);
@@ -53,14 +23,26 @@ function handleRememberMe(email: string, rememberMe: boolean) {
   }
 }
 
+function clearAuthForm() {
+  const { rememberMe } = store.get(authFormAtom);
+  store.set(authFormAtom, {
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    rememberMe,
+    showPassword: false,
+  });
+}
+
+// ─────────────────────────────
+// SIGN UP
+// ─────────────────────────────
 export async function handleEmailSignup() {
-  const fullName = store.get(fullNameAtom);
-  const email = store.get(emailAtom);
-  const password = store.get(passwordAtom);
-  const rememberMe = store.get(rememberMeAtom);
+  const { fullName, email, password, rememberMe } = store.get(authFormAtom);
 
   const t = toastLoading("Creating account...");
-  store.set(loadingAtom, true);
+  store.set(loadingSignUpFormAtom, true);
 
   try {
     const result = await client.signUp.email({
@@ -75,33 +57,30 @@ export async function handleEmailSignup() {
     }
 
     toastSuccess("Account created successfully!", t);
-
-    if (rememberMe) {
-      localStorage.setItem("rememberedEmail", email);
-    } else {
-      localStorage.removeItem("rememberedEmail");
-    }
-
+    handleRememberMe(email, rememberMe);
+    clearAuthForm();
     return result;
   } catch (err: any) {
     toastError(err.message || "Signup failed.", t);
     return null;
   } finally {
-    store.set(loadingAtom, false);
+    store.set(loadingSignUpFormAtom, false);
   }
 }
 
-// or js-cookie on client
-
+// ─────────────────────────────
+// LOGIN
+// ─────────────────────────────
 export async function handleEmailLogin() {
-  const login = store.get(loginAtom);
+  const { email, password, rememberMe } = store.get(authFormAtom);
+
   const t = toastLoading("Signing in...");
-  store.set(loadingAtom, true);
+  store.set(loadingSignInFormAtom, true);
 
   try {
     const result = await client.signIn.email({
-      email: login.email,
-      password: login.password,
+      email,
+      password,
     });
 
     if (result.error) {
@@ -110,33 +89,26 @@ export async function handleEmailLogin() {
     }
 
     toastSuccess("Signed in successfully!", t);
-
-    // Remember email if checkbox checked
-    if (store.get(rememberMeAtom)) {
-      localStorage.setItem("rememberedEmail", login.email);
-    } else {
-      localStorage.removeItem("rememberedEmail");
-    }
+    handleRememberMe(email, rememberMe);
 
     if (result?.data?.token) {
-      // Store the session token in a cookie
       document.cookie = `better-auth.session=${result.data.token}; path=/; Secure; SameSite=Lax`;
-      // Optionally store user info locally for client-side access
       localStorage.setItem("user", JSON.stringify(result.data.user));
     }
+
+    clearAuthForm();
     return result;
   } catch (err: any) {
     toastError(err.message || "Failed to sign in.", t);
     return null;
   } finally {
-    store.set(loadingAtom, false);
+    store.set(loadingSignInFormAtom, false);
   }
 }
 
 // ─────────────────────────────
 // SOCIAL SIGN-IN / REGISTER
 // ─────────────────────────────
-
 export async function handleSocialAuth({
   provider,
   mode,
@@ -152,16 +124,18 @@ export async function handleSocialAuth({
   errorMessage: string;
   callbackURL: string;
 }) {
-  const email = store.get(emailAtom);
-  const rememberMe = store.get(rememberMeAtom);
+  const { email, rememberMe } = store.get(authFormAtom);
 
   const t = toastLoading(loadingMessage);
+  const loadingAtom =
+    mode === "signin" ? loadingSignInFormAtom : loadingSignUpFormAtom;
+
   store.set(loadingAtom, true);
 
   try {
     const result = await client.signIn.social({
       provider,
-      //   callbackURL,
+      callbackURL,
     });
 
     if (result?.error) {
@@ -171,6 +145,7 @@ export async function handleSocialAuth({
 
     toastSuccess(successMessage, t);
     handleRememberMe(email, rememberMe);
+    clearAuthForm();
     return result;
   } catch (err: any) {
     toastError(err.message || errorMessage, t);
@@ -179,10 +154,10 @@ export async function handleSocialAuth({
     store.set(loadingAtom, false);
   }
 }
-// ────────────────
-// PUBLIC ACTIONS
-// ────────────────
 
+// ─────────────────────────────
+// PUBLIC SOCIAL AUTH ACTIONS
+// ─────────────────────────────
 export async function signInWithGithub() {
   return await handleSocialAuth({
     provider: "github",
@@ -227,13 +202,16 @@ export async function registerWithGithub() {
   });
 }
 
+// ─────────────────────────────
+// LOGOUT
+// ─────────────────────────────
 export async function logout() {
   try {
     const result = await client.signOut();
-    console.log(result, "logout data");
     document.cookie = `better-auth.session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax`;
     localStorage.removeItem("user");
-    store.set(sessionAtom, null);
+    store.set(authModeAtom, "login");
+    clearAuthForm();
     return result;
   } catch (err) {
     console.error("Logout failed", err);

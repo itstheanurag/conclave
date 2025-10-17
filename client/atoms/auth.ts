@@ -2,55 +2,40 @@
 
 import { atom } from "jotai";
 
-export const fullNameAtom = atom("");
-export const emailAtom = atom("");
-export const passwordAtom = atom("");
-export const confirmPasswordAtom = atom("");
+const EMAIL_VALIDATION_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const authFormAtom = atom({
+  fullName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  rememberMe: false,
+  showPassword: false,
+});
 
 export const authModeAtom = atom<"login" | "register">("login");
+export const loadingSignUpFormAtom = atom(false);
+export const loadingSignInFormAtom = atom(false);
 
-export const userAtom = atom<{
-  id: string;
-  email: string;
-  name: string;
-} | null>(null);
-
-export const rememberMeAtom = atom(false);
-
-export const loadingAtom = atom(false);
-
-export const passwordsMatchAtom = atom(
-  (get) => get(passwordAtom) === get(confirmPasswordAtom)
-);
-
-export const loginAtom = atom(
-  (get) => ({
-    email: get(emailAtom),
-    password: get(passwordAtom),
-  }),
-  (get, set, update: { email?: string; password?: string }) => {
-    if (update.email !== undefined) set(emailAtom, update.email);
-    if (update.password !== undefined) set(passwordAtom, update.password);
-  }
-);
-
+// Derived atoms
 export const isRegisterFormValidAtom = atom((get) => {
-  const name = get(fullNameAtom);
-  const email = get(emailAtom);
-  const pass = get(passwordAtom);
-  const confirm = get(confirmPasswordAtom);
-
+  const { fullName, email, password, confirmPassword } = get(authFormAtom);
   return (
-    name.trim() !== "" &&
-    email.trim() !== "" &&
-    pass.length >= 8 &&
-    confirm === pass
+    fullName.trim() !== "" &&
+    EMAIL_VALIDATION_REGEX.test(email) &&
+    password.length >= 8 &&
+    confirmPassword === password
   );
 });
 
-// Derived atom for login form validity
 export const isLoginFormValidAtom = atom((get) => {
-  const email = get(emailAtom);
-  const pass = get(passwordAtom);
-  return email.trim() !== "" && pass.trim() !== "";
+  const { email, password } = get(authFormAtom);
+
+  // Basic email pattern check
+
+  return (
+    EMAIL_VALIDATION_REGEX.test(email) &&
+    password.trim() !== "" &&
+    password.length >= 8
+  );
 });

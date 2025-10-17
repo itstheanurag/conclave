@@ -1,24 +1,20 @@
 "use client";
+
 import { useAtom } from "jotai";
+import { Eye, EyeOff } from "lucide-react";
 import {
-  fullNameAtom,
-  emailAtom,
-  passwordAtom,
-  confirmPasswordAtom,
+  authFormAtom,
   authModeAtom,
-  loadingAtom,
+  loadingSignUpFormAtom,
   isRegisterFormValidAtom,
 } from "@/atoms/auth";
 import { handleEmailSignup } from "@/actions";
-import { GithubSignInButton } from "@/components/ui/buttons/github/signIn";
+import { GithubSignUpButton } from "../ui/buttons/github/singup";
 
 export default function SignupForm() {
-  const [fullName, setFullName] = useAtom(fullNameAtom);
-  const [email, setEmail] = useAtom(emailAtom);
-  const [password, setPassword] = useAtom(passwordAtom);
-  const [confirmPassword, setConfirmPassword] = useAtom(confirmPasswordAtom);
+  const [form, setForm] = useAtom(authFormAtom);
   const [, setAuthMode] = useAtom(authModeAtom);
-  const [loading] = useAtom(loadingAtom);
+  const [loading] = useAtom(loadingSignUpFormAtom);
   const [isValid] = useAtom(isRegisterFormValidAtom);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,10 +23,15 @@ export default function SignupForm() {
     await handleEmailSignup();
   };
 
+  const updateField = (field: keyof typeof form, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   return (
     <div className="card bg-base-300">
       <div className="card-body">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          {/* Full name */}
           <div className="form-control">
             <label className="label mb-1">
               <span className="label-text font-medium">Full name</span>
@@ -39,12 +40,13 @@ export default function SignupForm() {
               type="text"
               placeholder="John Doe"
               className="input input-bordered w-full"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              value={form.fullName}
+              onChange={(e) => updateField("fullName", e.target.value)}
               required
             />
           </div>
 
+          {/* Email */}
           <div className="form-control">
             <label className="label mb-1">
               <span className="label-text font-medium">Email</span>
@@ -53,26 +55,42 @@ export default function SignupForm() {
               type="email"
               placeholder="you@example.com"
               className="input input-bordered w-full"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={(e) => updateField("email", e.target.value)}
               required
             />
           </div>
 
+          {/* Password */}
           <div className="form-control">
             <label className="label mb-1">
               <span className="label-text font-medium">Password</span>
             </label>
-            <input
-              type="password"
-              placeholder="********"
-              className="input input-bordered w-full"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                type={form.showPassword ? "text" : "password"}
+                placeholder="********"
+                className="input input-bordered w-full pr-10"
+                value={form.password}
+                onChange={(e) => updateField("password", e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => updateField("showPassword", !form.showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {form.showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
           </div>
 
+          {/* Confirm password */}
           <div className="form-control">
             <label className="label mb-1">
               <span className="label-text font-medium">Confirm Password</span>
@@ -81,8 +99,8 @@ export default function SignupForm() {
               type="password"
               placeholder="********"
               className="input input-bordered w-full"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={form.confirmPassword}
+              onChange={(e) => updateField("confirmPassword", e.target.value)}
               required
             />
           </div>
@@ -97,7 +115,7 @@ export default function SignupForm() {
 
           <div className="divider">Or continue with</div>
 
-          <GithubSignInButton />
+          <GithubSignUpButton />
 
           <p className="text-sm text-center mt-3">
             Already have an account?{" "}
