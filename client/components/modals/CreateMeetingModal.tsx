@@ -38,10 +38,7 @@ export default function MeetingModal({ isOpen, onClose }: MeetingModalProps) {
   return createPortal(
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 z-40"
-        onClick={onClose}
-      ></div>
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose}></div>
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
