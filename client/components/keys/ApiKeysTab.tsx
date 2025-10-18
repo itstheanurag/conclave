@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Zap } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { SessionData } from "@/types/session";
-import { ApiKeyCreateModal } from "@/components/modals/ApiKeys";
+import { ApiKeyCreateModal } from "@/components/modals/CreateApiKeyModal";
 import { ApiKey } from "@/types/dashboard";
 import { ApiKeysTable } from "./ApiKeysTable";
 import { ApiKeyDetails } from "./ApiKeyDetails";

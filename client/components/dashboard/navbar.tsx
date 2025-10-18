@@ -5,7 +5,7 @@ import { SessionData } from "@/types/session";
 import Button from "../ui/Button";
 import ThemeController from "@/components/theme";
 import { logout } from "@/actions";
-import MeetingModal from "../modals/CreateMeeting";
+import MeetingModal from "../modals/CreateMeetingModal";
 import { Bell } from "lucide-react";
 
 interface DashboardNavbarProps {
@@ -22,7 +22,28 @@ export default function DashboardNavbar({ sessionData }: DashboardNavbarProps) {
 
   return (
     <nav className="sticky top-0 z-50 bg-base-300/60 backdrop-blur-md shadow-sm border-b border-base-200 px-4 py-3 flex justify-between items-center">
-      <div className="text-xl font-bold text-primary">Conclave</div>
+      <div className="relative w-full max-w-sm">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-base-content/70 pointer-events-none z-10"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z"
+          />
+        </svg>
+
+        <input
+          type="text"
+          placeholder="Search..."
+          className="input input-bordered w-full pl-10 pr-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary z-0"
+        />
+      </div>
 
       <div className="flex items-center gap-3">
         <Button onClick={() => setIsModalOpen(true)}>+ Meet</Button>

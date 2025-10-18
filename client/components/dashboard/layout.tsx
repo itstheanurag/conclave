@@ -5,6 +5,8 @@ import DashboardNavbar from "./navbar";
 import OverviewTab from "./overview";
 import Sidebar from "./sidebar";
 import ApiKeysTab from "../keys/ApiKeysTab";
+import ProjectsDashboardTab from "../projects/projectTab";
+import MeetingsPage from "../meetings/Meetings";
 
 interface DashboardLayoutClientProps {
   children?: React.ReactNode;
@@ -30,6 +32,10 @@ export default function DashboardLayoutClient({
         return <OverviewTab sessionData={session} />;
       case "api_keys":
         return <ApiKeysTab sessionData={session} />;
+      case "projects":
+        return <ProjectsDashboardTab sessionData={session} />;
+      case "meetings":
+        return <MeetingsPage />;
       default:
         return (
           <div className="flex items-center justify-center h-full">
