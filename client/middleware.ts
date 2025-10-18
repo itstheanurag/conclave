@@ -4,18 +4,21 @@ import type { NextRequest } from "next/server";
 const ROUTES = {
   protected: ["/dashboard", "/settings"],
   exclusive: ["/auth", "/"],
+  public: ["/meet"],
 };
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("better-auth.session")?.value;
   const path = req.nextUrl.pathname;
 
-  console.log("Middleware running for:", path, "Token exists:", !!token);
-
   const isProtected = ROUTES.protected.some((route) => path.startsWith(route));
+
   const isExclusive = ROUTES.exclusive.some((route) => path.startsWith(route));
 
-  // Handle protected routes
+  const isPublic = ROUTES.public.some((route) => path.startsWith(route));
+
+  if (isPublic) return NextResponse.next();
+
   if (isProtected) {
     if (!token) {
       console.log("No token, redirecting to /auth");
@@ -23,7 +26,6 @@ export async function middleware(req: NextRequest) {
     }
 
     try {
-      // Validate with your Hono backend
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BETTER_AUTH_API}/get-session`,
         {
@@ -33,20 +35,12 @@ export async function middleware(req: NextRequest) {
         }
       );
 
-      //   console.log(JSON.stringify(response))
-
-      //   console.log("Session validation response:", response);
-
       if (!response.ok) {
-        console.log("Invalid session, redirecting to /auth");
-        // Clear the invalid cookie
         const response = NextResponse.redirect(new URL("/auth", req.url));
         response.cookies.delete("better-auth.session");
         return response;
       }
 
-      // Session is valid, allow access
-      //   console.log("Valid session, allowing access");
       return NextResponse.next();
     } catch (error) {
       //   console.error("Session validation error:", error);

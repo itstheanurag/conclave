@@ -17,7 +17,6 @@ export default function MeetingsPage() {
   async function fetchMeetings() {
     setLoading(true);
     try {
-      // simulate API delay
       await new Promise((r) => setTimeout(r, 500));
       setMeetings(mockMeetings);
     } catch (err) {
