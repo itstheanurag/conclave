@@ -1,16 +1,22 @@
 "use client";
 
 import Navbar from "@/components/organisms/Navbar";
-import { useSession } from "@/hooks/auth";
 import { ThemeProvider } from "next-themes";
+import { usePathname } from "next/navigation";
 import { Toaster } from "sonner";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const { session } = useSession();
+  const pathname = usePathname();
+
+  const hideNavbarRoutes = ["/dashboard", "/settings", "/meet"];
+
+  const shouldHideNavbar = hideNavbarRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
 
   return (
-    <ThemeProvider attribute="data-theme" defaultTheme="light">
-      {!session && <Navbar />}
+    <ThemeProvider>
+      {!shouldHideNavbar && <Navbar />}
       {children}
       <Toaster position="bottom-right" richColors closeButton />
     </ThemeProvider>

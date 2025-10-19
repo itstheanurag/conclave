@@ -1,5 +1,5 @@
 import HomeSection from "@/components/home/home";
 
-export default function Home() {
+export default function Root() {
   return <HomeSection />;
 }

@@ -65,64 +65,6 @@ const SimpleNavbar = () => {
   );
 };
 
-// const DashboardNavbar = ({ sessionData }: { sessionData: SessionData }) => {
-//   const handleLogout = async () => {
-//     const data = await logout();
-
-//     if (data) {
-//       window.location.href = "/";
-//     }
-//   };
-
-//   return (
-//     <nav className="sticky top-0 z-50 bg-base-300/60 backdrop-blur-md shadow-sm border-b border-base-200">
-//       <div className="mx-auto px-4 py-3 flex items-center justify-between max-w-full">
-//         <a href="/" className="text-xl font-bold tracking-wide text-primary">
-//           Conclave
-//         </a>
-
-//         <div className="flex items-center gap-2 relative">
-//           <div className="dropdown dropdown-end">
-//             <label tabIndex={0} className="cursor-pointer">
-//               {sessionData.user.image ? (
-//                 <img
-//                   src={sessionData.user.image}
-//                   alt={sessionData.user.name}
-//                   className="w-8 h-8 rounded-full"
-//                 />
-//               ) : (
-//                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-//                   {sessionData.user.name[0]}
-//                 </div>
-//               )}
-//             </label>
-
-//             {/* Dropdown content */}
-//             <ul
-//               tabIndex={0}
-//               className="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-48 mt-2"
-//             >
-//               <li>
-//                 <Button
-//                   variant="ghost"
-//                   size="sm"
-//                   className="w-full justify-start"
-//                   onClick={handleLogout}
-//                 >
-//                   Logout
-//                 </Button>
-//               </li>
-//               <li>
-//                 <ThemeController />
-//               </li>
-//             </ul>
-//           </div>
-//         </div>
-//       </div>
-//     </nav>
-//   );
-// };
-
 export default function Navbar() {
   return <SimpleNavbar />;
 }
