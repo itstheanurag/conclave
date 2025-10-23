@@ -1,71 +1,70 @@
 "use client";
-import React from "react";
-import { Video, Users, Code, Shield } from "lucide-react";
+import { motion } from "framer-motion";
 
 const features = [
   {
-    title: "High-Quality Video",
+    name: "Push to deploy",
     description:
-      "Crystal-clear video meetings with low latency and optimized performance for every device.",
-    icon: <Video className="h-6 w-6 text-white" />,
-    color: "bg-gradient-to-r from-purple-500 to-indigo-500",
+      "Morbi viverra dui mi arcu sed. Tellus semper adipiscing suspendisse semper morbi. Odio urna massa nunc massa.",
   },
   {
-    title: "Team Collaboration",
+    name: "SSL certificates",
     description:
-      "Invite your team, share screens, chat, and collaborate seamlessly in real-time.",
-    icon: <Users className="h-6 w-6 text-white" />,
-    color: "bg-gradient-to-r from-green-400 to-teal-500",
+      "Sit quis amet rutrum tellus ullamcorper ultricies libero dolor eget. Sem sodales gravida quam turpis enim lacus amet.",
   },
   {
-    title: "Developer APIs",
+    name: "Simple queues",
     description:
-      "Integrate Conclave APIs into your apps and build Zoom-like experiences in minutes.",
-    icon: <Code className="h-6 w-6 text-white" />,
-    color: "bg-gradient-to-r from-yellow-400 to-orange-500",
+      "Quisque est vel vulputate cursus. Risus proin diam nunc commodo. Lobortis auctor congue commodo diam neque.",
   },
   {
-    title: "Secure & Private",
+    name: "Advanced security",
     description:
-      "End-to-end encryption ensures your meetings and data stay safe and confidential.",
-    icon: <Shield className="h-6 w-6 text-white" />,
-    color: "bg-gradient-to-r from-red-400 to-pink-500",
+      "Arcu egestas dolor vel iaculis in ipsum mauris. Tincidunt mattis aliquet hac quis. Id hac maecenas ac donec pharetra eget.",
   },
 ];
 
-const FeaturesSection = () => {
+export default function Features() {
   return (
-    <section className="bg-base-100 py-20 px-6 sm:px-10 lg:px-20 relative overflow-hidden">
-      {/* Optional: decorative background shapes */}
-      <div className="absolute top-0 left-0 w-64 h-64 bg-primary/10 rounded-full -z-10 blur-3xl"></div>
-      <div className="absolute bottom-0 right-0 w-64 h-64 bg-secondary/10 rounded-full -z-10 blur-3xl"></div>
-
-      <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-primary mb-12">
-          Features of Conclave
-        </h2>
-
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="card p-6 rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 bg-base-200"
-            >
-              <div
-                className={`flex items-center justify-center w-12 h-12 mb-4 rounded-full ${feature.color} hover:scale-110 transition-transform duration-300`}
+    <div className="bg-base-200 py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl lg:text-center">
+          <h2 className="text-base font-semibold leading-7 text-primary">
+            Deploy faster
+          </h2>
+          <p className="mt-2 text-3xl font-bold tracking-tight text-base-content sm:text-4xl">
+            Everything you need to deploy your app
+          </p>
+          <p className="mt-6 text-lg leading-8 text-base-content/80">
+            Quis tellus eget adipiscing convallis sit sit eget aliquet quis.
+            Suspendisse eget egestas a elementum pulvinar et feugiat blandit at.
+            In mi viverra elit nunc.
+          </p>
+        </div>
+        <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
+          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none lg:grid-cols-2 lg:gap-y-16">
+            {features.map((feature) => (
+              <motion.div
+                key={feature.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="relative pl-16"
               >
-                {feature.icon}
-              </div>
-              <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-              <p className="text-sm text-base-content/80">
-                {feature.description}
-              </p>
-            </div>
-          ))}
+                <dt className="text-base font-semibold leading-7 text-base-content">
+                  <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+                    {/* Heroicon name: outline/cloud-arrow-up */}
+                  </div>
+                  {feature.name}
+                </dt>
+                <dd className="mt-2 text-base leading-7 text-base-content/80">
+                  {feature.description}
+                </dd>
+              </motion.div>
+            ))}
+          </dl>
         </div>
       </div>
-    </section>
+    </div>
   );
-};
-
-export default FeaturesSection;
+}
