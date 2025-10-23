@@ -11,8 +11,12 @@ import {
   Hand,
   MoreVertical,
   PhoneOff,
+  Settings,
+  Film,
+  Wind,
 } from "lucide-react";
 import React, { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface Participant {
   id: number;
@@ -33,6 +37,34 @@ interface MeetingControlProps {
   onLeave?: () => void;
 }
 
+const ControlButton = ({
+  isActive,
+  onClick,
+  children,
+  label,
+  variant = "default",
+}: {
+  isActive: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  label: string;
+  variant?: "default" | "danger";
+}) => (
+  <div className="flex flex-col items-center gap-2">
+    <button
+      onClick={onClick}
+      className={cn("btn btn-circle btn-lg", {
+        "btn-primary": variant === "default" && isActive,
+        "btn-neutral": variant === "default" && !isActive,
+        "btn-error": variant === "danger",
+      })}
+    >
+      {children}
+    </button>
+    <span className="text-xs font-medium">{label}</span>
+  </div>
+);
+
 const MeetingControl = ({
   participants,
   showParticipants,
@@ -45,108 +77,104 @@ const MeetingControl = ({
 }: MeetingControlProps) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [isHandRaised, setIsHandRaised] = useState(false);
 
   return (
-    <div className="navbar bg-base-200 border-t border-base-300 px-6">
+    <div className="bg-base-200/80 backdrop-blur-sm border-t border-base-300/50 px-6 py-4 flex justify-between items-center">
       {/* Left controls */}
-      <div className="flex-1 justify-start">
-        <div className="btn-group">
-          <button
-            onClick={() => setIsMuted(!isMuted)}
-            className={`btn ${isMuted ? "btn-error" : "btn-neutral"} gap-2`}
-          >
-            {isMuted ? (
-              <MicOff className="w-5 h-5" />
-            ) : (
-              <Mic className="w-5 h-5" />
-            )}
-            <span className="hidden sm:inline">
-              {isMuted ? "Unmute" : "Mute"}
-            </span>
-          </button>
+      <div className="flex gap-4">
+        <ControlButton
+          isActive={isMuted}
+          onClick={() => setIsMuted(!isMuted)}
+          label={isMuted ? "Unmute" : "Mute"}
+          variant={isMuted ? "danger" : "default"}
+        >
+          {isMuted ? (
+            <MicOff className="w-6 h-6" />
+          ) : (
+            <Mic className="w-6 h-6" />
+          )}
+        </ControlButton>
+        <ControlButton
+          isActive={isVideoOff}
+          onClick={() => setIsVideoOff(!isVideoOff)}
+          label={isVideoOff ? "Start Video" : "Stop Video"}
+          variant={isVideoOff ? "danger" : "default"}
+        >
+          {isVideoOff ? (
+            <VideoOff className="w-6 h-6" />
+          ) : (
+            <Video className="w-6 h-6" />
+          )}
+        </ControlButton>
+      </div>
 
-          <button
-            onClick={() => setIsVideoOff(!isVideoOff)}
-            className={`btn ${isVideoOff ? "btn-error" : "btn-neutral"} gap-2`}
+      {/* Center controls */}
+      <div className="flex gap-4">
+        <ControlButton
+          isActive={isScreenSharing}
+          onClick={() => setIsScreenSharing(!isScreenSharing)}
+          label="Share Screen"
+        >
+          <MonitorUp className="w-6 h-6" />
+        </ControlButton>
+        <ControlButton
+          isActive={showParticipants}
+          onClick={() => setShowParticipants(!showParticipants)}
+          label={`Participants (${participants.length})`}
+        >
+          <Users className="w-6 h-6" />
+        </ControlButton>
+        <ControlButton
+          isActive={showChat}
+          onClick={() => setShowChat(!showChat)}
+          label="Chat"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </ControlButton>
+        <ControlButton
+          isActive={isHandRaised}
+          onClick={() => setIsHandRaised(!isHandRaised)}
+          label={isHandRaised ? "Lower Hand" : "Raise Hand"}
+        >
+          <Hand className="w-6 h-6" />
+        </ControlButton>
+        <div className="dropdown dropdown-top dropdown-end">
+          <label tabIndex={0} className="btn btn-circle btn-lg btn-neutral">
+            <MoreVertical className="w-6 h-6" />
+          </label>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64 mb-4"
           >
-            {isVideoOff ? (
-              <VideoOff className="w-5 h-5" />
-            ) : (
-              <Video className="w-5 h-5" />
-            )}
-            <span className="hidden sm:inline">
-              {isVideoOff ? "Start" : "Stop"}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setIsScreenSharing(!isScreenSharing)}
-            className={`btn ${
-              isScreenSharing ? "btn-primary" : "btn-neutral"
-            } gap-2`}
-          >
-            <MonitorUp className="w-5 h-5" />
-            <span className="hidden sm:inline">Share</span>
-          </button>
+            <li>
+              <a>
+                <Settings className="w-5 h-5 mr-2" /> Settings
+              </a>
+            </li>
+            <li>
+              <a>
+                <Film className="w-5 h-5 mr-2" /> Start Recording
+              </a>
+            </li>
+            <li>
+              <a>
+                <Wind className="w-5 h-5 mr-2" /> Blur My Background
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
 
       {/* Right controls */}
-      <div className="flex-none">
-        <div className="btn-group">
-          <button
-            onClick={() => setShowParticipants(!showParticipants)}
-            className={`btn ${
-              showParticipants ? "btn-primary" : "btn-neutral"
-            } gap-2`}
-          >
-            <Users className="w-5 h-5" />
-            <span className="hidden sm:inline">
-              People ({participants.length})
-            </span>
-          </button>
-
-          <button
-            onClick={() => setShowChat(!showChat)}
-            className={`btn ${showChat ? "btn-primary" : "btn-neutral"} gap-2`}
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="hidden sm:inline">Chat</span>
-          </button>
-
-          <button className="btn btn-neutral gap-2">
-            <Hand className="w-5 h-5" />
-            <span className="hidden sm:inline">Raise</span>
-          </button>
-
-          <div className="dropdown dropdown-end">
-            <label tabIndex={0} className="btn btn-neutral btn-circle">
-              <MoreVertical className="w-5 h-5" />
-            </label>
-            <ul
-              tabIndex={0}
-              className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
-            >
-              <li>
-                <a>Settings</a>
-              </li>
-              <li>
-                <a>Recording</a>
-              </li>
-              <li>
-                <a>Blur background</a>
-              </li>
-            </ul>
-          </div>
-
-          <button
-            className="btn btn-error gap-2 ml-2"
-            onClick={onLeave || (() => (window.location.href = "/"))}
-          >
-            <PhoneOff className="w-5 h-5" />
-            <span className="hidden sm:inline">Leave</span>
-          </button>
-        </div>
+      <div>
+        <button
+          className="btn btn-error btn-lg gap-2"
+          onClick={onLeave || (() => (window.location.href = "/"))}
+        >
+          <PhoneOff className="w-6 h-6" />
+          <span className="hidden sm:inline">Leave</span>
+        </button>
       </div>
     </div>
   );
