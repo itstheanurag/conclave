@@ -6,6 +6,7 @@ import MeetingChat from "./MeetingChat";
 import SidebarParticipants from "./participants";
 import VideoGrid from "./VideoGrid";
 import { cn } from "@/lib/utils";
+import useWebRTC from "@/hooks/useWebRTC";
 
 const initialParticipants = [
   {
@@ -76,12 +77,40 @@ const initialMessages = [
 
 export default function MeetingPage() {
   const [participants, setParticipants] = useState(initialParticipants);
+  const [mediaStreams, setMediaStreams] = useState<Map<number, MediaStream>>(
+    new Map()
+  );
   const [messages, setMessages] = useState(initialMessages);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [message, setMessage] = useState("");
   const [viewMode, setViewMode] = useState<"speaker" | "grid">("grid");
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const { localStream, remoteStream, startMedia, startScreenShare, stopMedia, stopScreenShare } = useWebRTC("test-room");
+
+  useEffect(() => {
+    if (localStream) {
+      const newMediaStreams = new Map(mediaStreams);
+      newMediaStreams.set(1, localStream);
+      setMediaStreams(newMediaStreams);
+    }
+  }, [localStream]);
+
+  useEffect(() => {
+    if (remoteStream) {
+      const newMediaStreams = new Map(mediaStreams);
+      newMediaStreams.set(2, remoteStream);
+      setMediaStreams(newMediaStreams);
+    }
+  }, [remoteStream]);
+
+  useEffect(() => {
+    const participantsWithStreams = participants.map((p) => ({
+      ...p,
+      stream: mediaStreams.get(p.id),
+    }));
+    setParticipants(participantsWithStreams);
+  }, [mediaStreams]);
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -166,6 +195,10 @@ export default function MeetingPage() {
           }}
           isScreenSharing={isScreenSharing}
           setIsScreenSharing={setIsScreenSharing}
+          startMedia={startMedia}
+          startScreenShare={startScreenShare}
+          stopMedia={stopMedia}
+          stopScreenShare={stopScreenShare}
         />
       </footer>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 import { Grid3x3, Maximize2, MonitorUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react";
 
 interface Participant {
   id: number;
@@ -9,6 +10,7 @@ interface Participant {
   isVideoOff: boolean;
   isHost: boolean;
   isSpeaking?: boolean;
+  stream?: MediaStream;
 }
 
 interface VideoGridProps {
@@ -35,42 +37,54 @@ const ParticipantVideo = ({
 }: {
   participant: Participant;
   isThumbnail?: boolean;
-}) => (
-  <div
-    className={cn(
-      "relative bg-base-200 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300",
-      {
-        "ring-4 ring-primary shadow-lg": participant.isSpeaking,
-        "w-full h-full": !isThumbnail,
-        "w-40 h-24 cursor-pointer": isThumbnail,
-      }
-    )}
-  >
-    {participant.isVideoOff ? (
-      <ParticipantAvatar name={participant.name} />
-    ) : (
-      <div className="w-full h-full bg-gradient-to-br from-base-300 to-base-100">
-        {/* Video element would go here */}
-      </div>
-    )}
-    <div className="absolute bottom-2 left-2 bg-base-300/50 backdrop-blur-sm text-white px-2 py-1 rounded-md text-sm">
-      {participant.name}
-    </div>
-    {participant.isHost && (
-      <div className="badge badge-primary badge-sm absolute top-2 right-2">
-        Host
-      </div>
-    )}
-  </div>
-);
-
-const SpeakerView = ({
-  participants,
-}: {
-  participants: Participant[];
 }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current && participant.stream && videoRef.current.srcObject !== participant.stream) {
+      videoRef.current.srcObject = participant.stream;
+    }
+  }, [participant.stream]);
+
+  return (
+    <div
+      className={cn(
+        "relative bg-base-200 rounded-lg overflow-hidden flex items-center justify-center transition-all duration-300",
+        {
+          "ring-4 ring-primary shadow-lg": participant.isSpeaking,
+          "aspect-video": !isThumbnail,
+          "w-40 h-24 cursor-pointer": isThumbnail,
+        }
+      )}
+    >
+      {participant.isVideoOff || !participant.stream ? (
+        <ParticipantAvatar name={participant.name} />
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+          style={{ display: participant.isVideoOff ? "none" : "block" }}
+        />
+      )}
+      <div className="absolute bottom-2 left-2 bg-base-300/50 backdrop-blur-sm text-white px-2 py-1 rounded-md text-sm">
+        {participant.name}
+      </div>
+      {participant.isHost && (
+        <div className="badge badge-primary badge-sm absolute top-2 right-2">
+          Host
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SpeakerView = ({ participants }: { participants: Participant[] }) => {
   const speaker =
-    participants.find((p) => p.isSpeaking) || participants.find((p) => p.isHost) || participants[0];
+    participants.find((p) => p.isSpeaking) ||
+    participants.find((p) => p.isHost) ||
+    participants[0];
   const otherParticipants = participants.filter((p) => p.id !== speaker.id);
 
   return (
@@ -91,14 +105,16 @@ const SpeakerView = ({
 
 const GridView = ({ participants }: { participants: Participant[] }) => {
   const getGridCols = (count: number) => {
-    if (count <= 2) return 'grid-cols-1 md:grid-cols-2';
-    if (count <= 4) return 'grid-cols-2';
-    if (count <= 9) return 'grid-cols-3';
-    return 'grid-cols-4';
+    if (count <= 2) return "grid-cols-1 md:grid-cols-2";
+    if (count <= 4) return "grid-cols-2";
+    if (count <= 9) return "grid-cols-3";
+    return "grid-cols-4";
   };
 
   return (
-    <div className={cn("flex-1 grid gap-4 p-4", getGridCols(participants.length))}>
+    <div
+      className={cn("flex-1 grid gap-4 p-4", getGridCols(participants.length))}
+    >
       {participants.map((p) => (
         <ParticipantVideo key={p.id} participant={p} />
       ))}
@@ -123,7 +139,9 @@ export default function VideoGrid({
       {isScreenSharing && (
         <div className="alert alert-info absolute bottom-4 left-4 w-auto shadow-lg">
           <MonitorUp className="w-5 h-5" />
-          <span className="text-sm font-medium">You are presenting your screen</span>
+          <span className="text-sm font-medium">
+            You are presenting your screen
+          </span>
         </div>
       )}
 

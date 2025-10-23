@@ -1,5 +1,13 @@
 "use client";
-import { Users, Mic, MicOff, X, MoreVertical, UserCog, Crown } from "lucide-react";
+import {
+  Users,
+  Mic,
+  MicOff,
+  X,
+  MoreVertical,
+  UserCog,
+  Crown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Participant {
@@ -52,48 +60,54 @@ export default function SidebarParticipants({
             <div className="flex items-center gap-3 min-w-0">
               <div className="avatar placeholder">
                 <div className="bg-gradient-to-br from-primary to-secondary text-primary-content rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold">
-                  {p.name.split(" ").map((n) => n[0]).join("")}
+                  {p.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </div>
               </div>
               <div className="flex flex-col min-w-0">
-                <p className="text-sm font-semibold truncate">
-                  {p.name}
-                </p>
+                <p className="text-sm font-semibold truncate">{p.name}</p>
                 {p.isHost && (
                   <span className="text-xs text-primary font-bold flex items-center gap-1">
-                    <Crown className="w-3 h-3"/> Host
+                    <Crown className="w-3 h-3" /> Host
                   </span>
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                className="btn btn-ghost btn-circle btn-sm"
-              >
+              <button className="btn btn-ghost btn-circle btn-sm">
                 {p.isMuted ? (
                   <MicOff className="w-4 h-4 text-error" />
                 ) : (
                   <Mic className="w-4 h-4 text-success" />
                 )}
               </button>
-              
+
               {!p.isHost && onRemove && (
                 <div className="dropdown dropdown-end">
-                  <label tabIndex={0} className="btn btn-ghost btn-circle btn-sm">
+                  <label
+                    tabIndex={0}
+                    className="btn btn-ghost btn-circle btn-sm"
+                  >
                     <MoreVertical className="w-4 h-4" />
                   </label>
-                  <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-48">
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-48"
+                  >
                     {onMuteToggle && (
                       <li>
                         <a onClick={() => onMuteToggle(p.id)}>
-                          {p.isMuted ? <Mic/> : <MicOff/>} {p.isMuted ? "Unmute" : "Mute"} Participant
+                          {p.isMuted ? <Mic /> : <MicOff />}{" "}
+                          {p.isMuted ? "Unmute" : "Mute"} Participant
                         </a>
                       </li>
                     )}
                     <li>
                       <a onClick={() => onRemove(p.id)} className="text-error">
-                        <UserCog className="w-4 h-4 mr-2"/> Remove Participant
+                        <UserCog className="w-4 h-4 mr-2" /> Remove Participant
                       </a>
                     </li>
                   </ul>
