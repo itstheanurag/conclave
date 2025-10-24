@@ -2,19 +2,10 @@
 import { Grid3x3, Maximize2, MonitorUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
-
-interface Participant {
-  id: number;
-  name: string;
-  isMuted: boolean;
-  isVideoOff: boolean;
-  isHost: boolean;
-  isSpeaking?: boolean;
-  stream?: MediaStream;
-}
+import { MeetingParticipant } from "@/types";
 
 interface VideoGridProps {
-  participants: Participant[];
+  participants: MeetingParticipant[];
   isScreenSharing: boolean;
   viewMode: "speaker" | "grid";
   setViewMode: (mode: "speaker" | "grid") => void;
@@ -35,13 +26,17 @@ const ParticipantVideo = ({
   participant,
   isThumbnail = false,
 }: {
-  participant: Participant;
+  participant: MeetingParticipant;
   isThumbnail?: boolean;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (videoRef.current && participant.stream && videoRef.current.srcObject !== participant.stream) {
+    if (
+      videoRef.current &&
+      participant.stream &&
+      videoRef.current.srcObject !== participant.stream
+    ) {
       videoRef.current.srcObject = participant.stream;
     }
   }, [participant.stream]);
@@ -53,7 +48,7 @@ const ParticipantVideo = ({
         {
           "ring-4 ring-primary shadow-lg": participant.isSpeaking,
           "aspect-video": !isThumbnail,
-          "w-40 h-24 cursor-pointer": isThumbnail,
+          "w-24 h-24 cursor-pointer": isThumbnail,
         }
       )}
     >
@@ -80,7 +75,11 @@ const ParticipantVideo = ({
   );
 };
 
-const SpeakerView = ({ participants }: { participants: Participant[] }) => {
+const SpeakerView = ({
+  participants,
+}: {
+  participants: MeetingParticipant[];
+}) => {
   const speaker =
     participants.find((p) => p.isSpeaking) ||
     participants.find((p) => p.isHost) ||
@@ -88,12 +87,17 @@ const SpeakerView = ({ participants }: { participants: Participant[] }) => {
   const otherParticipants = participants.filter((p) => p.id !== speaker.id);
 
   return (
-    <div className="flex-1 flex flex-col gap-4">
-      <div className="flex-1 relative">
-        <ParticipantVideo participant={speaker} />
+    <div className="flex flex-col h-full">
+      {/* Main speaker video */}
+      <div className=" flex justify-center items-center ">
+        <div className="w-full max-w-6xl aspect-video">
+          <ParticipantVideo participant={speaker} />
+        </div>
       </div>
+
+      {/* Other participants (thumbnails) */}
       {otherParticipants.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="flex gap-3 overflow-x-auto pb-3 pt-2 justify-center">
           {otherParticipants.map((p) => (
             <ParticipantVideo key={p.id} participant={p} isThumbnail />
           ))}
@@ -103,7 +107,7 @@ const SpeakerView = ({ participants }: { participants: Participant[] }) => {
   );
 };
 
-const GridView = ({ participants }: { participants: Participant[] }) => {
+const GridView = ({ participants }: { participants: MeetingParticipant[] }) => {
   const getGridCols = (count: number) => {
     if (count <= 2) return "grid-cols-1 md:grid-cols-2";
     if (count <= 4) return "grid-cols-2";

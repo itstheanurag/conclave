@@ -1,5 +1,72 @@
 import { MeetingSummary, MeetingDetails } from "@/types";
 
+export const initialParticipants = [
+  {
+    id: 1,
+    name: "You",
+    isMuted: false,
+    isVideoOff: false,
+    isHost: true,
+    isSpeaking: false,
+  },
+  {
+    id: 2,
+    name: "Sarah Johnson",
+    isMuted: false,
+    isVideoOff: true,
+    isHost: false,
+    isSpeaking: true,
+  },
+  {
+    id: 3,
+    name: "Mike Chen",
+    isMuted: true,
+    isVideoOff: false,
+    isHost: false,
+    isSpeaking: false,
+  },
+  {
+    id: 4,
+    name: "Emily Davis",
+    isMuted: false,
+    isVideoOff: true,
+    isHost: false,
+    isSpeaking: false,
+  },
+  {
+    id: 5,
+    name: "James Wilson",
+    isMuted: false,
+    isVideoOff: true,
+    isHost: false,
+    isSpeaking: false,
+  },
+];
+
+export const initialMessages = [
+  {
+    id: 1,
+    sender: "Sarah Johnson",
+    text: "Hey everyone! Can you hear me?",
+    time: "10:23 AM",
+    isMe: false,
+  },
+  {
+    id: 2,
+    sender: "You",
+    text: "Yes, loud and clear!",
+    time: "10:23 AM",
+    isMe: true,
+  },
+  {
+    id: 3,
+    sender: "Mike Chen",
+    text: "Ready to start when you are",
+    time: "10:24 AM",
+    isMe: false,
+  },
+];
+
 export const mockMeetings: MeetingSummary[] = [
   {
     id: "m1",

@@ -7,110 +7,33 @@ import SidebarParticipants from "./participants";
 import VideoGrid from "./VideoGrid";
 import { cn } from "@/lib/utils";
 import useWebRTC from "@/hooks/useWebRTC";
-
-const initialParticipants = [
-  {
-    id: 1,
-    name: "You",
-    isMuted: false,
-    isVideoOff: false,
-    isHost: true,
-    isSpeaking: false,
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    isMuted: false,
-    isVideoOff: true,
-    isHost: false,
-    isSpeaking: true,
-  },
-  {
-    id: 3,
-    name: "Mike Chen",
-    isMuted: true,
-    isVideoOff: false,
-    isHost: false,
-    isSpeaking: false,
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    isMuted: false,
-    isVideoOff: true,
-    isHost: false,
-    isSpeaking: false,
-  },
-  {
-    id: 5,
-    name: "James Wilson",
-    isMuted: false,
-    isVideoOff: true,
-    isHost: false,
-    isSpeaking: false,
-  },
-];
-
-const initialMessages = [
-  {
-    id: 1,
-    sender: "Sarah Johnson",
-    text: "Hey everyone! Can you hear me?",
-    time: "10:23 AM",
-    isMe: false,
-  },
-  {
-    id: 2,
-    sender: "You",
-    text: "Yes, loud and clear!",
-    time: "10:23 AM",
-    isMe: true,
-  },
-  {
-    id: 3,
-    sender: "Mike Chen",
-    text: "Ready to start when you are",
-    time: "10:24 AM",
-    isMe: false,
-  },
-];
+import { initialMessages } from "@/data/meetings/meetings";
 
 export default function MeetingPage() {
-  const [participants, setParticipants] = useState(initialParticipants);
-  const [mediaStreams, setMediaStreams] = useState<Map<number, MediaStream>>(
-    new Map()
-  );
+  const currentUserId = "local-user-123";
+  const currentUserName = "You";
+
   const [messages, setMessages] = useState(initialMessages);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [message, setMessage] = useState("");
   const [viewMode, setViewMode] = useState<"speaker" | "grid">("grid");
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const { localStream, remoteStream, startMedia, startScreenShare, stopMedia, stopScreenShare } = useWebRTC("test-room");
+
+  const {
+    participants,
+    startMedia,
+    startScreenShare,
+    stopMedia,
+    stopScreenShare,
+    isScreenSharingActive,
+    toggleMic,
+    toggleCamera,
+  } = useWebRTC("test-room", currentUserId, currentUserName);
 
   useEffect(() => {
-    if (localStream) {
-      const newMediaStreams = new Map(mediaStreams);
-      newMediaStreams.set(1, localStream);
-      setMediaStreams(newMediaStreams);
-    }
-  }, [localStream]);
-
-  useEffect(() => {
-    if (remoteStream) {
-      const newMediaStreams = new Map(mediaStreams);
-      newMediaStreams.set(2, remoteStream);
-      setMediaStreams(newMediaStreams);
-    }
-  }, [remoteStream]);
-
-  useEffect(() => {
-    const participantsWithStreams = participants.map((p) => ({
-      ...p,
-      stream: mediaStreams.get(p.id),
-    }));
-    setParticipants(participantsWithStreams);
-  }, [mediaStreams]);
+    setIsScreenSharing(isScreenSharingActive);
+  }, [isScreenSharingActive]);
 
   const handleSendMessage = () => {
     if (message.trim()) {
@@ -129,14 +52,27 @@ export default function MeetingPage() {
     }
   };
 
-  const handleMuteToggle = (id: number) => {
-    setParticipants(
-      participants.map((p) => (p.id === id ? { ...p, isMuted: !p.isMuted } : p))
-    );
+  const handleMuteToggle = (id: string) => {
+    if (id === currentUserId) {
+      toggleMic();
+    } else {
+      console.log(`Toggle mute for remote participant ${id}`);
+      // For remote participants, this would involve sending a signaling message to the server
+    }
   };
 
-  const handleRemoveParticipant = (id: number) => {
-    setParticipants(participants.filter((p) => p.id !== id));
+  const handleVideoToggle = (id: string) => {
+    if (id === currentUserId) {
+      toggleCamera();
+    } else {
+      console.log(`Toggle video for remote participant ${id}`);
+      // For remote participants, this would involve sending a signaling message to the server
+    }
+  };
+
+  const handleRemoveParticipant = (id: string) => {
+    console.log(`Remove participant ${id}`);
+    // Implement actual participant removal logic via signaling to the server
   };
 
   return (
@@ -146,7 +82,7 @@ export default function MeetingPage() {
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 flex flex-col transition-all duration-300">
           <VideoGrid
-            participants={participants}
+            participants={Array.from(participants.values())}
             viewMode={viewMode}
             setViewMode={setViewMode}
             isScreenSharing={isScreenSharing}
@@ -163,7 +99,7 @@ export default function MeetingPage() {
         >
           {showParticipants ? (
             <SidebarParticipants
-              participants={participants}
+              participants={Array.from(participants.values())}
               onClose={() => setShowParticipants(false)}
               onMuteToggle={handleMuteToggle}
               onRemove={handleRemoveParticipant}
@@ -182,7 +118,7 @@ export default function MeetingPage() {
 
       <footer className="relative z-30">
         <MeetingControl
-          participants={participants}
+          participants={Array.from(participants.values())}
           showParticipants={showParticipants}
           setShowParticipants={(show) => {
             setShowParticipants(show);
@@ -194,11 +130,12 @@ export default function MeetingPage() {
             setShowParticipants(false);
           }}
           isScreenSharing={isScreenSharing}
-          setIsScreenSharing={setIsScreenSharing}
           startMedia={startMedia}
           startScreenShare={startScreenShare}
           stopMedia={stopMedia}
           stopScreenShare={stopScreenShare}
+          toggleMic={toggleMic}
+          toggleCamera={toggleCamera}
         />
       </footer>
     </div>

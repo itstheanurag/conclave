@@ -17,44 +17,36 @@ import {
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-
-interface Participant {
-  id: number;
-  name: string;
-  isMuted: boolean;
-  isVideoOff: boolean;
-  isHost: boolean;
-}
+import { MeetingParticipant } from "@/types";
 
 interface MeetingControlProps {
-  participants: Participant[];
+  participants: MeetingParticipant[];
   showParticipants: boolean;
   setShowParticipants: (show: boolean) => void;
   showChat: boolean;
   setShowChat: (show: boolean) => void;
   isScreenSharing: boolean;
-  setIsScreenSharing: (sharing: boolean) => void;
   onLeave?: () => void;
   startMedia: (video: boolean, audio: boolean) => void;
   startScreenShare: () => void;
   stopMedia: () => void;
   stopScreenShare: () => void;
+  toggleMic: () => void;
+  toggleCamera: () => void;
 }
 
 const ControlButton = ({
   isActive,
   onClick,
   children,
-  label,
   variant = "default",
 }: {
   isActive: boolean;
   onClick: () => void;
   children: React.ReactNode;
-  label: string;
   variant?: "default" | "danger";
 }) => (
-  <div className="flex flex-col items-center gap-2">
+  <div className="flex flex-col items-center ">
     <button
       onClick={onClick}
       className={cn("btn btn-circle btn-lg", {
@@ -65,7 +57,6 @@ const ControlButton = ({
     >
       {children}
     </button>
-    <span className="text-xs font-medium">{label}</span>
   </div>
 );
 
@@ -76,30 +67,27 @@ const MeetingControl = ({
   showChat,
   setShowChat,
   isScreenSharing,
-  setIsScreenSharing,
   onLeave,
   startMedia,
   startScreenShare,
   stopMedia,
   stopScreenShare,
+  toggleMic,
+  toggleCamera,
 }: MeetingControlProps) => {
-  const [isMuted, setIsMuted] = useState(true);
-  const [isVideoOff, setIsVideoOff] = useState(true);
+  const localParticipant = participants.find((p) => p.isHost);
+  const isMuted = localParticipant?.isMuted ?? true;
+  const isVideoOff = localParticipant?.isVideoOff ?? true;
   const [isHandRaised, setIsHandRaised] = useState(false);
 
-  // ✅ Ensure audio/video are stopped on mount
-  useEffect(() => {
-    stopMedia();
-  }, [stopMedia]);
-
   return (
-    <div className="bg-base-200/80 backdrop-blur-sm border-t border-base-300/50 px-6 py-4 flex justify-between items-center">
-      {/* Left controls */}
-      <div className="flex gap-4">
+    <div className="bg-base-200/80 backdrop-blur-sm border-t border-base-300/50 px-6 py-4 flex justify-center items-center">
+      <div className="flex flex-wrap justify-center gap-4">
+        {/* Left controls */}
         <ControlButton
-          isActive={isMuted}
-          onClick={() => setIsMuted(!isMuted)}
-          label={isMuted ? "Unmute" : "Mute"}
+          isActive={!isMuted}
+          onClick={toggleMic}
+          // label={isMuted ? "Unmute" : "Mute"}
           variant={isMuted ? "danger" : "default"}
         >
           {isMuted ? (
@@ -111,15 +99,8 @@ const MeetingControl = ({
 
         <ControlButton
           isActive={!isVideoOff}
-          onClick={() => {
-            if (isVideoOff) {
-              startMedia(true, true);
-            } else {
-              stopMedia();
-            }
-            setIsVideoOff(!isVideoOff);
-          }}
-          label={isVideoOff ? "Start Video" : "Stop Video"}
+          onClick={toggleCamera}
+          // label={isVideoOff ? "Start Video" : "Stop Video"}
           variant={isVideoOff ? "default" : "danger"}
         >
           {isVideoOff ? (
@@ -128,21 +109,15 @@ const MeetingControl = ({
             <VideoOff className="w-6 h-6" />
           )}
         </ControlButton>
-      </div>
 
-      {/* Center controls */}
-      <div className="flex gap-4">
+        {/* Center controls */}
         <ControlButton
           isActive={isScreenSharing}
           onClick={() => {
-            if (isScreenSharing) {
-              stopScreenShare();
-            } else {
-              startScreenShare();
-            }
-            setIsScreenSharing(!isScreenSharing);
+            if (isScreenSharing) stopScreenShare();
+            else startScreenShare();
           }}
-          label={isScreenSharing ? "Stop Sharing" : "Share Screen"}
+          // label={isScreenSharing ? "Stop Sharing" : "Share Screen"}
         >
           <MonitorUp className="w-6 h-6" />
         </ControlButton>
@@ -150,7 +125,7 @@ const MeetingControl = ({
         <ControlButton
           isActive={showParticipants}
           onClick={() => setShowParticipants(!showParticipants)}
-          label={`Participants (${participants.length})`}
+          // label={`Participants (${participants.length})`}
         >
           <Users className="w-6 h-6" />
         </ControlButton>
@@ -158,7 +133,7 @@ const MeetingControl = ({
         <ControlButton
           isActive={showChat}
           onClick={() => setShowChat(!showChat)}
-          label="Chat"
+          // label="Chat"
         >
           <MessageSquare className="w-6 h-6" />
         </ControlButton>
@@ -166,11 +141,12 @@ const MeetingControl = ({
         <ControlButton
           isActive={isHandRaised}
           onClick={() => setIsHandRaised(!isHandRaised)}
-          label={isHandRaised ? "Lower Hand" : "Raise Hand"}
+          // label={isHandRaised ? "Lower Hand" : "Raise Hand"}
         >
           <Hand className="w-6 h-6" />
         </ControlButton>
 
+        {/* More menu */}
         <div className="dropdown dropdown-top dropdown-end">
           <label tabIndex={0} className="btn btn-circle btn-lg btn-neutral">
             <MoreVertical className="w-6 h-6" />
@@ -196,10 +172,8 @@ const MeetingControl = ({
             </li>
           </ul>
         </div>
-      </div>
 
-      {/* Right controls */}
-      <div>
+        {/* Leave button */}
         <button
           className="btn btn-error btn-lg gap-2"
           onClick={onLeave || (() => (window.location.href = "/"))}

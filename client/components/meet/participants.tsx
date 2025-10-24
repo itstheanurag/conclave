@@ -9,21 +9,13 @@ import {
   Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Participant {
-  id: number;
-  name: string;
-  isMuted: boolean;
-  isVideoOff: boolean;
-  isHost: boolean;
-  isSpeaking?: boolean;
-}
+import { MeetingParticipant } from "@/types";
 
 interface SidebarParticipantsProps {
-  participants: Participant[];
+  participants: MeetingParticipant[];
   onClose: () => void;
-  onMuteToggle?: (id: number) => void;
-  onRemove?: (id: number) => void;
+  onMuteToggle?: (id: string) => void;
+  onRemove?: (id: string) => void;
 }
 
 export default function SidebarParticipants({
@@ -49,7 +41,7 @@ export default function SidebarParticipants({
 
       {/* Participants List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {participants.map((p) => (
+        {participants.map((p: MeetingParticipant) => (
           <div
             key={p.id}
             className={cn(
