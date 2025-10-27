@@ -1,4 +1,4 @@
-import { Clock, Info, Settings, ShieldCheck } from "lucide-react";
+import { Settings, ShieldCheck } from "lucide-react";
 
 export default function MeetingHeader() {
   return (

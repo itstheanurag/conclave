@@ -32,14 +32,32 @@ const ParticipantVideo = ({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (
-      videoRef.current &&
-      participant.stream &&
-      videoRef.current.srcObject !== participant.stream
-    ) {
-      videoRef.current.srcObject = participant.stream;
+    if (videoRef.current && participant.stream) {
+      let streamToDisplay = participant.stream;
+
+      if (participant.isScreenShare) {
+        // Find the screen share video track
+        const screenShareTrack = participant.stream
+          .getVideoTracks()
+          .find((track) => track.label.includes("screen")); // Assuming screen share tracks have 'screen' in label
+        if (screenShareTrack) {
+          streamToDisplay = new MediaStream([screenShareTrack]);
+        }
+      } else {
+        // Find the camera video track
+        const cameraTrack = participant.stream
+          .getVideoTracks()
+          .find((track) => !track.label.includes("screen"));
+        if (cameraTrack) {
+          streamToDisplay = new MediaStream([cameraTrack]);
+        }
+      }
+
+      if (videoRef.current.srcObject !== streamToDisplay) {
+        videoRef.current.srcObject = streamToDisplay;
+      }
     }
-  }, [participant.stream]);
+  }, [participant.stream, participant.isScreenShare]);
 
   return (
     <div
@@ -52,7 +70,7 @@ const ParticipantVideo = ({
         }
       )}
     >
-      {participant.isVideoOff || !participant.stream ? (
+      {participant.isVideoOff && !participant.isScreenShare || !participant.stream ? (
         <ParticipantAvatar name={participant.name} />
       ) : (
         <video
@@ -60,7 +78,7 @@ const ParticipantVideo = ({
           autoPlay
           playsInline
           className="w-full h-full object-cover"
-          style={{ display: participant.isVideoOff ? "none" : "block" }}
+          style={{ display: participant.isVideoOff && !participant.isScreenShare ? "none" : "block" }}
         />
       )}
       <div className="absolute bottom-2 left-2 bg-base-300/50 backdrop-blur-sm text-white px-2 py-1 rounded-md text-sm">
@@ -69,6 +87,11 @@ const ParticipantVideo = ({
       {participant.isHost && (
         <div className="badge badge-primary badge-sm absolute top-2 right-2">
           Host
+        </div>
+      )}
+      {participant.isScreenShare && (
+        <div className="badge badge-info badge-sm absolute top-2 left-2">
+          Screen Sharing
         </div>
       )}
     </div>
