@@ -2,7 +2,6 @@ import { Device } from "mediasoup-client";
 import {
   JoinRoomRequest,
   CreateWebRtcTransportRequest,
-  WebRtcTransportCreatedResponse,
   ConnectWebRtcTransportRequest,
   ProduceRequest,
   ProduceResponse,
@@ -26,17 +25,13 @@ import type {
 
 /* ---------- Typed EventEmitter ---------- */
 
-
-
 class TypedEventEmitter<E extends Record<string, any>> {
   private listeners: {
     [K in keyof E]?: Listener<E[K]>[];
   } = {};
 
   on<K extends keyof E>(event: K, listener: Listener<E[K]>): void {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
+    if (!this.listeners[event]) this.listeners[event] = [];
     this.listeners[event]!.push(listener);
   }
 
@@ -81,10 +76,12 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
 
   private handleWsOpen = () => {
     console.log("WebSocket connected");
+
     const message: JoinRoomRequest = {
-      type: "join-room",
+      type: "joinRoom",
       data: { roomId: this.roomId, peerId: this.peerId },
     };
+
     this.ws.send(JSON.stringify(message));
   };
 
@@ -93,45 +90,51 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
     console.log("WebSocket message received:", message);
 
     switch (message.type) {
-      case "room-router-rtp-capabilities": {
-        const { routerRtpCapabilities } = message.data;
-        await this.loadDevice(routerRtpCapabilities);
+      case "getRouterRtpCapabilitiesResponse": {
+        const rtpCapabilities = message.data?.routerRtpCapabilities;
+        if (!rtpCapabilities) {
+          console.error("Invalid RTP caps response:", message);
+          return;
+        }
+
+        await this.loadDevice(rtpCapabilities);
         break;
       }
 
-      case "new-producer": {
-        const newProducerMsg = message as NewProducerNotification;
-        const { peerId, producerId, kind, rtpParameters } = newProducerMsg.data;
+      case "newProducer": {
+        const { peerId, producerId, kind } = (
+          message as NewProducerNotification
+        ).data;
 
-        await this.createConsumer(peerId, producerId, kind, rtpParameters);
+        await this.createConsumer(peerId, producerId, kind);
+
         break;
       }
 
-      case "producer-closed": {
-        const producerClosedMsg = message as ProducerClosedNotification;
-        this.removeConsumer(producerClosedMsg.data.producerId);
+      case "producerClosed": {
+        const { producerId } = (message as ProducerClosedNotification).data;
+        this.removeConsumer(producerId);
         break;
       }
 
-      case "web-rtc-transport-created": {
-        const transportCreatedMsg = message as WebRtcTransportCreatedResponse;
+      case "createWebRtcTransportResponse": {
+        const { direction, params } = message.data;
 
-        if (transportCreatedMsg.data.direction === "send") {
-          this.sendTransport = this.device?.createSendTransport(
-            transportCreatedMsg.data.params
-          );
+        if (direction === "send") {
+          this.sendTransport = this.device?.createSendTransport(params);
 
           this.sendTransport?.on(
             "connect",
             ({ dtlsParameters }, callback, errback) => {
-              const connectTransportMsg: ConnectWebRtcTransportRequest = {
-                type: "connect-web-rtc-transport",
+              const connectMsg: ConnectWebRtcTransportRequest = {
+                type: "connectWebRtcTransport",
                 data: {
                   transportId: this.sendTransport!.id,
                   dtlsParameters,
                 },
               };
-              this.send(connectTransportMsg).then(callback).catch(errback);
+
+              this.send(connectMsg).then(callback).catch(errback);
             }
           );
 
@@ -139,7 +142,7 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
             "produce",
             async ({ kind, rtpParameters, appData }, callback, errback) => {
               try {
-                const produceRequest: ProduceRequest = {
+                const req: ProduceRequest = {
                   type: "produce",
                   data: {
                     transportId: this.sendTransport!.id,
@@ -148,34 +151,33 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
                     appData,
                   },
                 };
-                const { id } = await this.send<ProduceResponse["data"]>(
-                  produceRequest
-                );
+
+                const { id } = await this.send<ProduceResponse["data"]>(req);
                 callback({ id });
-              } catch (error) {
-                errback(error as any);
+              } catch (err) {
+                errback(err as any);
               }
             }
           );
         } else {
-          this.recvTransport = this.device?.createRecvTransport(
-            transportCreatedMsg.data.params
-          );
+          this.recvTransport = this.device?.createRecvTransport(params);
 
           this.recvTransport?.on(
             "connect",
             ({ dtlsParameters }, callback, errback) => {
-              const connectTransportMsg: ConnectWebRtcTransportRequest = {
-                type: "connect-web-rtc-transport",
+              const connectMsg: ConnectWebRtcTransportRequest = {
+                type: "connectWebRtcTransport",
                 data: {
                   transportId: this.recvTransport!.id,
                   dtlsParameters,
                 },
               };
-              this.send(connectTransportMsg).then(callback).catch(errback);
+
+              this.send(connectMsg).then(callback).catch(errback);
             }
           );
         }
+
         break;
       }
 
@@ -192,23 +194,23 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
     console.error("WebSocket error:", error);
   };
 
-  /* ---------- Typed send() helper ---------- */
+  /* ---------- Typed send() ---------- */
 
   private send = <T = any>(message: WebSocketMessage): Promise<T> => {
     return new Promise((resolve, reject) => {
       this.ws.send(JSON.stringify(message));
 
+      const expectedResponseType = `${message.type}Response`;
+
       const handleResponse = (event: MessageEvent) => {
         const response = JSON.parse(event.data);
 
-        if (response.type === `${message.type}-response`) {
+        if (response.type === expectedResponseType) {
           this.ws.removeEventListener("message", handleResponse);
 
-          if (response.error) {
-            reject(new Error(response.error));
-          } else {
-            resolve(response.data as T);
-          }
+          if (response.error) return reject(new Error(response.error));
+
+          resolve(response.data as T);
         }
       };
 
@@ -216,61 +218,54 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
     });
   };
 
-  /* ---------- Device & transports ---------- */
+  /* ---------- Device & Transports ---------- */
 
   private async loadDevice(routerRtpCapabilities: RtpCapabilities) {
     try {
       this.device = new Device();
       await this.device.load({ routerRtpCapabilities });
+
       console.log("Mediasoup device loaded");
 
-      const createSendTransportRequest: CreateWebRtcTransportRequest = {
-        type: "create-web-rtc-transport",
+      this.send<CreateWebRtcTransportRequest>({
+        type: "createWebRtcTransport",
         data: { direction: "send" },
-      };
-      this.send(createSendTransportRequest);
+      });
 
-      const createRecvTransportRequest: CreateWebRtcTransportRequest = {
-        type: "create-web-rtc-transport",
+      this.send<CreateWebRtcTransportRequest>({
+        type: "createWebRtcTransport",
         data: { direction: "recv" },
-      };
-      this.send(createRecvTransportRequest);
-    } catch (error: any) {
-      console.error("Error loading mediasoup device:", error);
-      if (error?.name === "UnsupportedError") {
-        console.error("Browser not supported");
-      }
+      });
+    } catch (err: any) {
+      console.error("Error loading mediasoup device:", err);
     }
   }
 
-  /* ---------- Local media ---------- */
+  /* ---------- Local Media ---------- */
 
   public async enableWebcam() {
     if (!this.device?.canProduce("video")) {
       console.error("Cannot produce video");
       return;
     }
-    try {
-      this._localStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
+
+    this._localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true,
+    });
+
+    const track = this._localStream.getVideoTracks()[0];
+    const producer = await this.sendTransport?.produce({ track });
+
+    if (producer) {
+      this.producers.set(producer.id, {
+        id: producer.id,
+        kind: "video",
+        track,
+        appData: producer.appData,
       });
 
-      const track = this._localStream.getVideoTracks()[0];
-      const producer = await this.sendTransport?.produce({ track });
-
-      if (producer) {
-        this.producers.set(producer.id, {
-          id: producer.id,
-          kind: "video",
-          track,
-          appData: producer.appData,
-        });
-        console.log("Webcam enabled", producer);
-        this.emit("localStream", this._localStream);
-      }
-    } catch (error) {
-      console.error("Error enabling webcam:", error);
+      this.emit("localStream", this._localStream);
     }
   }
 
@@ -279,42 +274,107 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
       console.error("Cannot produce audio");
       return;
     }
-    try {
-      if (!this._localStream) {
-        this._localStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-      }
 
-      const track = this._localStream.getAudioTracks()[0];
-      const producer = await this.sendTransport?.produce({ track });
+    if (!this._localStream) {
+      this._localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+    }
 
-      if (producer) {
-        this.producers.set(producer.id, {
-          id: producer.id,
-          kind: "audio",
-          track,
-          appData: producer.appData,
-        });
-        console.log("Mic enabled", producer);
-        this.emit("localStream", this._localStream);
-      }
-    } catch (error) {
-      console.error("Error enabling mic:", error);
+    const track = this._localStream.getAudioTracks()[0];
+    const producer = await this.sendTransport?.produce({ track });
+
+    if (producer) {
+      this.producers.set(producer.id, {
+        id: producer.id,
+        kind: "audio",
+        track,
+      });
+
+      this.emit("localStream", this._localStream);
     }
   }
 
-  public async enableScreenShare() {
-    if (!this.device?.canProduce("video")) {
-      console.error("Cannot produce video (screen share)");
+  /* ---------- Disable Webcam ---------- */
+  public async disableWebcam() {
+    const videoProducer = Array.from(this.producers.values()).find(
+      (p) => p.kind === "video" && !p.appData?.share
+    );
+
+    if (!videoProducer) return;
+
+    // Stop track
+    videoProducer.track.stop();
+
+    // Close producer on server
+    await this.send({
+      type: "closeProducer",
+      data: {
+        producerId: videoProducer.id,
+      },
+    });
+
+    this.producers.delete(videoProducer.id);
+
+    // Update local preview
+    if (this._localStream) {
+      const videoTrack = this._localStream.getVideoTracks()[0];
+      if (videoTrack) this._localStream.removeTrack(videoTrack);
+      this.emit("localStream", this._localStream);
+    }
+
+    console.log("Webcam disabled");
+  }
+
+  /* ---------- Disable Microphone ---------- */
+  public async disableMic() {
+    const audioProducer = Array.from(this.producers.values()).find(
+      (p) => p.kind === "audio"
+    );
+
+    if (!audioProducer) {
+      console.warn("No active mic producer found");
       return;
     }
+
+    // Stop the track locally
+    audioProducer.track.stop();
+
+    // Tell server to close this producer
+    await this.send({
+      type: "closeProducer",
+      data: {
+        producerId: audioProducer.id,
+      },
+    });
+
+    // Remove from local map
+    this.producers.delete(audioProducer.id);
+
+    // Update local preview
+    if (this._localStream) {
+      const audioTrack = this._localStream.getAudioTracks()[0];
+      if (audioTrack) this._localStream.removeTrack(audioTrack);
+      this.emit("localStream", this._localStream);
+    }
+
+    console.log("Microphone disabled");
+  }
+
+  /* ---------- Enable Screen Share ---------- */
+  public async enableScreenShare() {
+    if (!this.device?.canProduce("video")) {
+      console.error("Cannot produce screen share");
+      return;
+    }
+
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
       });
 
       const track = screenStream.getVideoTracks()[0];
+
       const producer = await this.sendTransport?.produce({
         track,
         appData: { share: true },
@@ -327,77 +387,62 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
           track,
           appData: producer.appData,
         });
-        console.log("Screen share enabled", producer);
 
-        // you might emit screenStream explicitly here if you want local preview
+        // Replace local stream preview only if needed
         this.emit("localStream", this._localStream);
 
         track.onended = async () => {
           console.log("Screen share ended");
           await this.disableScreenShare();
         };
+
+        console.log("Screen share enabled");
       }
     } catch (error) {
       console.error("Error enabling screen share:", error);
     }
   }
 
-  public async disableWebcam() {
-    const videoProducer = Array.from(this.producers.values()).find(
-      (p) => p.kind === "video" && !p.appData?.share
-    );
-    if (videoProducer) {
-      videoProducer.track.stop();
-      // TODO: notify server to close this producer
-      this.producers.delete(videoProducer.id);
-      console.log("Webcam disabled");
-      this.emit("localStream", this._localStream);
-    }
-  }
-
-  public async disableMic() {
-    const audioProducer = Array.from(this.producers.values()).find(
-      (p) => p.kind === "audio"
-    );
-    if (audioProducer) {
-      audioProducer.track.stop();
-      // TODO: notify server to close this producer
-      this.producers.delete(audioProducer.id);
-      console.log("Mic disabled");
-      this.emit("localStream", this._localStream);
-    }
-  }
-
+  /* ---------- Disable Screen Share ---------- */
   public async disableScreenShare() {
-    const screenProducer = Array.from(this.producers.values()).find(
+    const shareProducer = Array.from(this.producers.values()).find(
       (p) => p.kind === "video" && p.appData?.share
     );
 
-    if (screenProducer) {
-      screenProducer.track.stop();
-      // TODO: notify server to close this producer
-      this.producers.delete(screenProducer.id);
-      console.log("Screen share disabled");
-      this.emit("localStream", this._localStream);
-    }
+    if (!shareProducer) return;
+
+    // Stop track
+    shareProducer.track.stop();
+
+    // Tell server to close producer
+    await this.send({
+      type: "closeProducer",
+      data: {
+        producerId: shareProducer.id,
+      },
+    });
+
+    this.producers.delete(shareProducer.id);
+
+    this.emit("localStream", this._localStream);
+
+    console.log("Screen share disabled");
   }
 
-  /* ---------- Remote consumers ---------- */
+  /* ---------- Remote Consumers ---------- */
 
   private async createConsumer(
     peerId: string,
     producerId: string,
-    kind: MediaKind,
-    rtpParameters: RtpParameters
+    kind: MediaKind
   ) {
-    // Make sure device + recvTransport are ready
     if (!this.device) {
       console.error("Device not loaded");
       return;
     }
 
     if (!this.recvTransport) {
-      console.error("No recvTransport to consume on");
+      console.error("No recvTransport available");
       return;
     }
 
@@ -407,12 +452,14 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
         data: {
           transportId: this.recvTransport.id,
           producerId,
-          rtpCapabilities: this.device.rtpCapabilities, // getter, safe after load()
+          rtpCapabilities: this.device.rtpCapabilities,
         },
       };
 
-      // ConsumeResponse["data"] is { id, producerId, kind, rtpParameters }
-      const { id } = await this.send<ConsumeResponse["data"]>(consumeRequest);
+      // Server returns rtpParameters HERE
+      const { id, rtpParameters } = await this.send<ConsumeResponse["data"]>(
+        consumeRequest
+      );
 
       const consumer = await this.recvTransport.consume({
         id,
@@ -422,9 +469,7 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
       });
 
       if (consumer) {
-        // key by producerId so removeConsumer(producerId) works
         this.consumers.set(producerId, consumer.track);
-        console.log("New consumer", consumer);
 
         this.emit("newConsumer", {
           peerId,
@@ -439,22 +484,22 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
   }
 
   private removeConsumer(producerId: string) {
-    const consumerTrack = this.consumers.get(producerId);
-    if (consumerTrack) {
-      consumerTrack.stop();
+    const track = this.consumers.get(producerId);
+    if (track) {
+      track.stop();
       this.consumers.delete(producerId);
-      console.log("Consumer removed", producerId);
+
       this.emit("consumerClosed", { producerId });
     }
   }
 
   /* ---------- Helpers ---------- */
 
-  public getLocalStream() {
+  getLocalStream() {
     return this._localStream;
   }
 
-  public getConsumers() {
+  getConsumers() {
     return Array.from(this.consumers.entries()).map(([id, track]) => ({
       id,
       track,
@@ -465,12 +510,16 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
     this.ws.close();
     this.sendTransport?.close();
     this.recvTransport?.close();
-    this.producers.forEach((producer) => producer.track.stop());
-    this.consumers.forEach((track) => track.stop());
+
+    this.producers.forEach((p) => p.track.stop());
+    this.consumers.forEach((t) => t.stop());
+
     this.device = undefined;
     this._localStream = undefined;
+
     this.producers.clear();
     this.consumers.clear();
+
     console.log("MediasoupClient closed");
   }
 }

@@ -9,41 +9,51 @@ import {
 
 export type WebSocketMessage =
   | JoinRoomRequest
-  | RoomRouterRtpCapabilitiesResponse
+  | JoinRoomResponse
+  | RouterRtpCapabilitiesResponse
   | CreateWebRtcTransportRequest
-  | WebRtcTransportCreatedResponse
+  | CreateWebRtcTransportResponse
   | ConnectWebRtcTransportRequest
   | ProduceRequest
   | ProduceResponse
   | ConsumeRequest
   | ConsumeResponse
   | NewProducerNotification
-  | ProducerClosedNotification;
+  | ProducerClosedNotification
+  | CloseProducerRequest
+  | CloseProducerResponse;
 
 export interface JoinRoomRequest {
-  type: "join-room";
+  type: "joinRoom";
   data: {
     roomId: string;
     peerId: string;
   };
 }
 
-export interface RoomRouterRtpCapabilitiesResponse {
-  type: "room-router-rtp-capabilities";
+export interface JoinRoomResponse {
+  type: "joinRoomResponse";
+  data: {
+    participants: MeetingParticipant[];
+  };
+}
+
+export interface RouterRtpCapabilitiesResponse {
+  type: "getRouterRtpCapabilitiesResponse";
   data: {
     routerRtpCapabilities: RtpCapabilities;
   };
 }
 
 export interface CreateWebRtcTransportRequest {
-  type: "create-web-rtc-transport";
+  type: "createWebRtcTransport";
   data: {
     direction: "send" | "recv";
   };
 }
 
-export interface WebRtcTransportCreatedResponse {
-  type: "web-rtc-transport-created";
+export interface CreateWebRtcTransportResponse {
+  type: "createWebRtcTransportResponse";
   data: {
     direction: "send" | "recv";
     params: {
@@ -56,7 +66,7 @@ export interface WebRtcTransportCreatedResponse {
 }
 
 export interface ConnectWebRtcTransportRequest {
-  type: "connect-web-rtc-transport";
+  type: "connectWebRtcTransport";
   data: {
     transportId: string;
     dtlsParameters: DtlsParameters;
@@ -74,7 +84,7 @@ export interface ProduceRequest {
 }
 
 export interface ProduceResponse {
-  type: "produce-response";
+  type: "produceResponse";
   data: {
     id: string;
   };
@@ -90,7 +100,7 @@ export interface ConsumeRequest {
 }
 
 export interface ConsumeResponse {
-  type: "consume-response";
+  type: "consumeResponse";
   data: {
     id: string;
     producerId: string;
@@ -100,17 +110,30 @@ export interface ConsumeResponse {
 }
 
 export interface NewProducerNotification {
-  type: "new-producer";
+  type: "newProducer";
   data: {
     peerId: string;
     producerId: string;
     kind: MediaKind;
-    rtpParameters: RtpParameters;
   };
 }
 
 export interface ProducerClosedNotification {
-  type: "producer-closed";
+  type: "producerClosed";
+  data: {
+    producerId: string;
+  };
+}
+
+export interface CloseProducerRequest {
+  type: "closeProducer";
+  data: {
+    producerId: string;
+  };
+}
+
+export interface CloseProducerResponse {
+  type: "closeProducerResponse";
   data: {
     producerId: string;
   };

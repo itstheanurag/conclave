@@ -10,11 +10,12 @@ import {
 export async function handleJoinRoom(
   ws: WebSocket,
   roomId: string,
-  userId: string,
+  peerId: string,
   userName: string
 ) {
   let room = roomsMap.get(roomId);
   if (!room) {
+    console.log("Room does not exists creating one");
     const worker = await createWorker();
     const router = await worker.createRouter();
     room = new Room(roomId, router);
@@ -23,12 +24,12 @@ export async function handleJoinRoom(
   }
 
   const isHost = room.participants.size === 0; // First participant to join is host
-  const participant = new Participant(ws, userId, userName, isHost);
+  const participant = new Participant(ws, peerId, userName, isHost);
   room.addParticipant(participant);
-  console.log(`🟢 Participant ${userName} (${userId}) joined room: ${roomId}`);
+  console.log(`🟢 Participant ${userName} (${peerId}) joined room: ${roomId}`);
 
   // Send existing producers and all participants info to the joining client
-  const existingProducers = room.getProducersForOtherParticipants(userId);
+  const existingProducers = room.getProducersForOtherParticipants(peerId);
   ws.send(
     JSON.stringify({
       type: MeetingRoomResponses.JoinRoomResponse,
@@ -48,7 +49,7 @@ export async function handleJoinRoom(
   );
 
   // Notify other participants about the new participant
-  room.broadcast(userId, MeetingRoomNotifications.NewParticipant, {
+  room.broadcast(peerId, MeetingRoomNotifications.NewParticipant, {
     userId: participant.userId,
     userName: participant.userName,
     isHost: participant.isHost,

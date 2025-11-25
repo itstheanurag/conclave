@@ -10,13 +10,15 @@ import {
 export async function handleMessage(ws: WebSocket, message: string) {
   const msg = JSON.parse(message);
 
+  console.log(msg, "message recieved on backend");
+
   switch (msg.type) {
     case MeetingRoomEvents.JoinRoom:
       return await handleJoinRoom(
         ws,
-        msg.payload.roomId,
-        msg.payload.userId,
-        msg.payload.userName
+        msg.data.roomId,
+        msg.data.peerId,
+        msg.data.userName
       );
     case MeetingRoomEvents.CreateWebRtcTransport: {
       const { roomId, userId, producing, consuming } = msg.payload;
