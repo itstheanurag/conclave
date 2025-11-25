@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/hooks/auth";
+import { useSession } from "@/hooks/useSession";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

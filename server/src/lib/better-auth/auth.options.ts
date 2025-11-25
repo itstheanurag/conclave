@@ -19,13 +19,11 @@ export const betterAuthOptions: BetterAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     },
   },
-
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 2,
-    cookieCache: { enabled: true, strategy: "jwt" },
+    cookieCache: { enabled: true },
   },
-
   user: {
     additionalFields: {
       role: { type: "string", defaultValue: "user", input: true },

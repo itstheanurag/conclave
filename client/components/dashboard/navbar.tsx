@@ -47,43 +47,37 @@ export default function DashboardNavbar({ sessionData }: DashboardNavbarProps) {
                 </div>
               )}
             </label>
+
+            {/* FIXED DROPDOWN */}
             <ul
               tabIndex={0}
-              className="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-52 mt-2 border border-base-300 z-50"
+              className="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-52 mt-2 border border-base-300 z-50 overflow-hidden"
             >
-              <li className="menu-title px-4 py-2">
-                <span className="text-sm font-semibold">
-                  {sessionData.user.name}
-                </span>
-                <span className="text-xs text-base-content/70 truncate">
+              <li className="px-2 py-2 rounded-md">
+                <div className="font-semibold">{sessionData.user.name}</div>
+                <div className="text-xs text-base-content/70 truncate block max-w-[11rem]">
                   {sessionData.user.email}
-                </span>
+                </div>
               </li>
+
               <div className="divider my-1"></div>
-              <li>
+
+              <li className="px-2 rounded-md">
                 <a href="/dashboard/profile">Profile</a>
               </li>
-              <li>
+
+              <li className="px-2 rounded-md">
                 <a href="/dashboard/settings">Settings</a>
               </li>
+
               <div className="divider my-1"></div>
-              <li>
-                <button
-                  className="w-full text-left px-2 py-1 hover:bg-base-300 rounded-md"
-                  onClick={() => setThemeModalOpen(true)}
-                >
-                  Theme
-                </button>
+
+              <li className="px-2 rounded-md">
+                <a onClick={() => setThemeModalOpen(true)}>Theme</a>
               </li>
-              <li>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
+
+              <li className="px-2 rounded-md">
+                <a onClick={handleLogout}>Logout</a>
               </li>
             </ul>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useSession } from "@/hooks/auth";
+import { useSession } from "@/hooks/useSession";
 import DashboardNavbar from "./navbar";
 import OverviewTab from "./overview";
 import Sidebar from "./sidebar";
