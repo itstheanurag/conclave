@@ -46,13 +46,3 @@ export type MeetingDetails = {
   meta?: Record<string, any>;
 };
 
-export interface MeetingParticipant {
-  id: string;
-  name: string;
-  isMuted: boolean;
-  isVideoOff: boolean;
-  isHost: boolean;
-  isSpeaking?: boolean;
-  stream?: MediaStream;
-  isScreenShare?: boolean;
-}
