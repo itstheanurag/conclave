@@ -168,14 +168,26 @@ export interface MeetingParticipant {
 
 export type MediasoupEvents = {
   localStream: MediaStream | undefined;
+
   newConsumer: {
     peerId: string;
     producerId: string;
     kind: MediaKind;
     track: MediaStreamTrack;
   };
+
   consumerClosed: {
     producerId: string;
+  };
+
+  newParticipant: {
+    peerId: string;
+    isHost: boolean;
+    name: string;
+  };
+
+  participantLeft?: {
+    peerId: string;
   };
 };
 

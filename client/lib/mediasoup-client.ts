@@ -19,7 +19,6 @@ import {
 import type {
   MediaKind,
   RtpCapabilities,
-  RtpParameters,
   Transport,
 } from "mediasoup-client/types";
 
@@ -86,18 +85,77 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
   };
 
   private handleWsMessage = async (event: MessageEvent) => {
-    const message: WebSocketMessage = JSON.parse(event.data);
+    const message: WebSocketMessage | any = JSON.parse(event.data);
     console.log("WebSocket message received:", message);
 
     switch (message.type) {
+      case "joinRoomResponse": {
+        const container = message.payload ?? message;
+        const { routerRtpCapabilities, producers, participants } =
+          container.data ?? {};
+
+        console.log("joinRoomResponse rtp caps:", routerRtpCapabilities);
+
+        if (!routerRtpCapabilities) {
+          console.error(
+            "joinRoomResponse missing routerRtpCapabilities:",
+            message
+          );
+          return;
+        }
+
+        // 1️⃣ Load mediasoup Device
+        await this.loadDevice(routerRtpCapabilities);
+
+        // 2️⃣ Create send + recv transports
+        await this.send({
+          type: "createWebRtcTransport",
+          data: { direction: "send" },
+        });
+
+        await this.send({
+          type: "createWebRtcTransport",
+          data: { direction: "recv" },
+        });
+
+        // 3️⃣ Add participants to UI (emit event)
+        if (participants && Array.isArray(participants)) {
+          for (const p of participants) {
+            if (p.userId !== this.peerId) {
+              this.emit("newParticipant", {
+                peerId: p.userId,
+                isHost: p.isHost,
+                name: p.userName ?? "Guest",
+              });
+            }
+          }
+        }
+
+        // 4️⃣ Consume all existing producers
+        if (producers && Array.isArray(producers)) {
+          for (const prod of producers) {
+            await this.createConsumer(prod.participantId, prod.id, prod.kind);
+          }
+        }
+
+        break;
+      }
+
       case "getRouterRtpCapabilitiesResponse": {
-        const rtpCapabilities = message.data?.routerRtpCapabilities;
+        // Keep this only if you actually still use a separate GetRouterRtpCapabilities flow.
+        const container = message.payload ?? message;
+        const rtpCapabilities =
+          container.data?.routerRtpCapabilities ?? container.data;
+
+        console.log("rtpCapabilities from server:", rtpCapabilities);
+
         if (!rtpCapabilities) {
           console.error("Invalid RTP caps response:", message);
           return;
         }
 
         await this.loadDevice(rtpCapabilities);
+        console.log(this.device?.rtpCapabilities, "post load capabilities");
         break;
       }
 
@@ -107,7 +165,6 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
         ).data;
 
         await this.createConsumer(peerId, producerId, kind);
-
         break;
       }
 
@@ -191,7 +248,11 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
   };
 
   private handleWsError = (error: Event) => {
-    console.error("WebSocket error:", error);
+    console.error("WebSocket error", {
+      url: this.ws.url,
+      readyState: this.ws.readyState,
+      event: error,
+    });
   };
 
   /* ---------- Typed send() ---------- */

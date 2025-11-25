@@ -9,72 +9,45 @@ import { initialMessages } from "@/data/meetings/meetings";
 import { useParams } from "next/navigation";
 import { useMediasoup } from "@/hooks/useMediasoup";
 import MeetingControlDock from "@/components/call/MeetingControl";
+import ParticipantTile from "@/components/call/participant-tile";
 
 export default function CallPage() {
   const { id } = useParams();
   const roomId = id as string;
 
   const [userId] = useState(() => Math.random().toString(36).substring(2, 15));
-
   const [messages, setMessages] = useState(initialMessages);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Video refs
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-
-  // -----------------------------
-  // MEDIASOUP HOOK
-  // -----------------------------
   const {
-    localStream,
-    remoteStreams,
     participants,
+    startMedia,
+    stopMedia,
+    toggleMic,
+    toggleCamera,
+    startScreenShare,
+    stopScreenShare,
     isMicEnabled,
     isWebcamEnabled,
     isScreenSharing,
-    startMedia,
-    stopMedia,
-    startScreenShare,
-    stopScreenShare,
-    toggleMic,
-    toggleCamera,
   } = useMediasoup({
     roomId,
     peerId: userId,
     websocketUrl: "ws://localhost:3001",
   });
 
-  // Attach local stream
+  /* Auto Start Media */
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
-  }, [localStream]);
-
-  // Attach first remote stream
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStreams.length > 0) {
-      remoteVideoRef.current.srcObject = remoteStreams[0];
-    }
-  }, [remoteStreams]);
-
-  // Auto start cam & mic
-  useEffect(() => {
-    (async () => {
-      await startMedia(true, true);
-    })();
+    startMedia(true, true); // don't await here
 
     return () => {
-      stopMedia(); // no await
+      stopMedia(); // also don't await here
     };
-  }, [startMedia, stopMedia]);
+  }, []);
 
-  // -----------------------------
-  // Messaging
-  // -----------------------------
+  /* Send Chat */
   const handleSendMessage = () => {
     if (!message.trim()) return;
 
@@ -95,9 +68,7 @@ export default function CallPage() {
     setMessage("");
   };
 
-  // -----------------------------
-  // Participant Controls
-  // -----------------------------
+  /* Participant Control */
   const handleMuteToggle = (id: string) => {
     if (id === userId) toggleMic();
   };
@@ -106,49 +77,26 @@ export default function CallPage() {
     if (id === userId) toggleCamera();
   };
 
-  const handleRemoveParticipant = (id: string) => {
-    console.log(`Remove participant ${id}`);
-  };
-
-  // -----------------------------
-  // RENDER
-  // -----------------------------
   return (
     <div className="h-screen w-full bg-base-100 flex flex-col font-sans">
       <MeetingHeader />
 
       <div className="flex-1 flex overflow-hidden">
-        <main className="flex-1 flex flex-col transition-all duration-300">
-          <div className="flex-1 flex justify-center items-center bg-gray-800 gap-2">
-            {/* LOCAL VIDEO */}
-            {localStream && (
-              <video
-                ref={localVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-1/2 h-full object-cover"
+        {/* MAIN VIDEO GRID */}
+        <main className="flex-1 p-4 bg-black overflow-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 h-full">
+            {Array.from(participants.values()).map((p) => (
+              <ParticipantTile
+                key={p.id}
+                participant={p}
+                isMe={p.id === userId}
               />
-            )}
-
-            {/* REMOTE VIDEO */}
-            {remoteStreams.length > 0 && (
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="w-1/2 h-full object-cover"
-              />
-            )}
-
-            {!localStream && remoteStreams.length === 0 && (
-              <p className="text-white">No media streams active</p>
-            )}
+            ))}
           </div>
         </main>
 
         {/* SIDEBAR */}
-        <div
+        <aside
           className={cn(
             "w-96 h-full flex-shrink-0 transition-all duration-300 ease-in-out",
             { "-mr-96": !showParticipants && !showChat }
@@ -159,7 +107,7 @@ export default function CallPage() {
               participants={Array.from(participants.values())}
               onClose={() => setShowParticipants(false)}
               onMuteToggle={handleMuteToggle}
-              onRemove={handleRemoveParticipant}
+              onRemove={(id) => console.log("Remove participant", id)}
             />
           ) : showChat ? (
             <MeetingChat
@@ -170,10 +118,10 @@ export default function CallPage() {
               onClose={() => setShowChat(false)}
             />
           ) : null}
-        </div>
+        </aside>
       </div>
 
-      {/* FOOTER CONTROLS */}
+      {/* CONTROLS */}
       <footer className="relative z-30">
         <MeetingControlDock
           isMicEnabled={isMicEnabled}

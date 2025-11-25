@@ -21,7 +21,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         msg.data.userName
       );
     case MeetingRoomEvents.CreateWebRtcTransport: {
-      const { roomId, userId, producing, consuming } = msg.payload;
+      const { roomId, userId, producing, consuming } = msg.data;
       const room = roomsMap.get(roomId);
       const participant = room?.participants.get(userId);
 
@@ -30,7 +30,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.CreateWebRtcTransportResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Room or participant not found",
             },
           })
@@ -50,7 +50,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         JSON.stringify({
           type: MeetingRoomResponses.CreateWebRtcTransportResponse,
           payload: {
-            messageId: msg.payload.messageId,
+            messageId: msg.data.messageId,
             data: {
               id: params.id,
               iceParameters: params.iceParameters,
@@ -64,7 +64,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
       break;
     }
     case MeetingRoomEvents.ConnectWebRtcTransport: {
-      const { roomId, userId, transportId, dtlsParameters } = msg.payload;
+      const { roomId, userId, transportId, dtlsParameters } = msg.data;
       const room = roomsMap.get(roomId);
       const participant = room?.participants.get(userId);
 
@@ -73,7 +73,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.ConnectWebRtcTransportResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Room or participant not found",
             },
           })
@@ -91,7 +91,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         ws.send(
           JSON.stringify({
             type: MeetingRoomResponses.ConnectWebRtcTransportResponse,
-            payload: { messageId: msg.payload.messageId, data: "connected" },
+            payload: { messageId: msg.data.messageId, data: "connected" },
           })
         );
       } else {
@@ -99,7 +99,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.ConnectWebRtcTransportResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Transport not found",
             },
           })
@@ -109,7 +109,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
     }
     case MeetingRoomEvents.Produce: {
       const { roomId, userId, transportId, kind, rtpParameters, appData } =
-        msg.payload;
+        msg.data;
       const room = roomsMap.get(roomId);
       const participant = room?.participants.get(userId);
 
@@ -118,7 +118,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.ProduceResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Room, participant or send transport not found",
             },
           })
@@ -146,7 +146,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         JSON.stringify({
           type: MeetingRoomResponses.ProduceResponse,
           payload: {
-            messageId: msg.payload.messageId,
+            messageId: msg.data.messageId,
             data: { id: producer.id },
           },
         })
@@ -154,7 +154,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
       break;
     }
     case MeetingRoomEvents.CloseProducer: {
-      const { roomId, userId, producerId } = msg.payload;
+      const { roomId, userId, producerId } = msg.data;
       const room = roomsMap.get(roomId);
       const participant = room?.participants.get(userId);
 
@@ -163,7 +163,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.CloseProducerResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Room or participant not found",
             },
           })
@@ -181,7 +181,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         ws.send(
           JSON.stringify({
             type: MeetingRoomResponses.CloseProducerResponse,
-            payload: { messageId: msg.payload.messageId, data: "closed" },
+            payload: { messageId: msg.data.messageId, data: "closed" },
           })
         );
       } else {
@@ -189,7 +189,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.CloseProducerResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Producer not found",
             },
           })
@@ -199,7 +199,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
     }
     case MeetingRoomEvents.Consume: {
       const { roomId, userId, transportId, producerId, rtpCapabilities } =
-        msg.payload;
+        msg.data;
       const room = roomsMap.get(roomId);
       const participant = room?.participants.get(userId);
 
@@ -208,7 +208,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.ConsumeResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Room, participant or receive transport not found",
             },
           })
@@ -225,7 +225,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.ConsumeResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Producer to consume not found",
             },
           })
@@ -245,7 +245,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         JSON.stringify({
           type: MeetingRoomResponses.ConsumeResponse,
           payload: {
-            messageId: msg.payload.messageId,
+            messageId: msg.data.messageId,
             data: {
               id: consumer.id,
               producerId: consumer.producerId,
@@ -259,7 +259,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
       break;
     }
     case MeetingRoomEvents.ResumeConsumer: {
-      const { roomId, userId, consumerId } = msg.payload;
+      const { roomId, userId, consumerId } = msg.data;
       const room = roomsMap.get(roomId);
       const participant = room?.participants.get(userId);
 
@@ -268,7 +268,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.ResumeConsumerResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Room or participant not found",
             },
           })
@@ -284,7 +284,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         ws.send(
           JSON.stringify({
             type: MeetingRoomResponses.ResumeConsumerResponse,
-            payload: { messageId: msg.payload.messageId, data: "resumed" },
+            payload: { messageId: msg.data.messageId, data: "resumed" },
           })
         );
       } else {
@@ -292,7 +292,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.ResumeConsumerResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Consumer not found",
             },
           })
@@ -301,7 +301,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
       break;
     }
     case MeetingRoomEvents.GetRouterRtpCapabilities: {
-      const { roomId } = msg.payload;
+      const { roomId } = msg.data;
       const room = roomsMap.get(roomId);
 
       if (!room) {
@@ -309,7 +309,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
           JSON.stringify({
             type: MeetingRoomResponses.GetRouterRtpCapabilitiesResponse,
             payload: {
-              messageId: msg.payload.messageId,
+              messageId: msg.data.messageId,
               error: "Room not found",
             },
           })
@@ -321,7 +321,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         JSON.stringify({
           type: MeetingRoomResponses.GetRouterRtpCapabilitiesResponse,
           payload: {
-            messageId: msg.payload.messageId,
+            messageId: msg.data.messageId,
             data: room.router.rtpCapabilities,
           },
         })

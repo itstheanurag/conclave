@@ -8,7 +8,6 @@ export const useMediasoup = ({
   websocketUrl,
 }: MediasoupClientOptions) => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-
   const [remoteStreams, setRemoteStreams] = useState<MediaStream[]>([]);
 
   const [participants, setParticipants] = useState<
@@ -22,7 +21,29 @@ export const useMediasoup = ({
   const clientRef = useRef<MediasoupClient | null>(null);
 
   /* -----------------------------------------------------
-   * Participant helpers
+   * STEP 0 — Ensure local participant always exists
+   * ----------------------------------------------------- */
+  useEffect(() => {
+    setParticipants((prev) => {
+      const updated = new Map(prev);
+      if (!updated.has(peerId)) {
+        updated.set(peerId, {
+          id: peerId,
+          name: "You",
+          stream: new MediaStream(),
+          isLocal: true,
+          isScreenShare: false,
+          isMuted: false,
+          isVideoOff: false,
+          isHost: false,
+        });
+      }
+      return updated;
+    });
+  }, [peerId]);
+
+  /* -----------------------------------------------------
+   * STEP 1 — Helper: update / add track
    * ----------------------------------------------------- */
   const updateParticipant = useCallback(
     (pId: string, track: MediaStreamTrack, screenShare = false) => {
@@ -30,7 +51,6 @@ export const useMediasoup = ({
         const updated = new Map(prev);
 
         let participant = updated.get(pId);
-
         if (!participant) {
           participant = {
             id: pId,
@@ -44,14 +64,14 @@ export const useMediasoup = ({
           };
         }
 
-        // Remove existing track of the same kind
-        const oldTrack = participant
-          .stream!.getTracks()
+        // Remove old track (same kind)
+        const oldTrack = participant.stream
+          ?.getTracks()
           .find((t) => t.kind === track.kind);
+        if (oldTrack) participant.stream?.removeTrack(oldTrack);
 
-        if (oldTrack) participant.stream!.removeTrack(oldTrack);
-
-        participant.stream!.addTrack(track);
+        // Add new track
+        participant.stream?.addTrack(track);
 
         if (screenShare) participant.isScreenShare = true;
 
@@ -62,6 +82,9 @@ export const useMediasoup = ({
     [peerId]
   );
 
+  /* -----------------------------------------------------
+   * STEP 2 — Remove consumer track
+   * ----------------------------------------------------- */
   const removeTrack = useCallback((producerIdToRemove: string) => {
     setParticipants((prev) => {
       const updated = new Map(prev);
@@ -69,7 +92,6 @@ export const useMediasoup = ({
       for (const [pid, p] of updated.entries()) {
         if (!p.stream) continue;
 
-        // Find and remove track whose id matches producerId (used as key in MediasoupClient)
         const track = p.stream
           .getTracks()
           .find((t) => t.id === producerIdToRemove);
@@ -77,7 +99,6 @@ export const useMediasoup = ({
         if (track) {
           p.stream.removeTrack(track);
 
-          // If participant has no more tracks and isn't local, remove them
           if (p.stream.getTracks().length === 0 && !p.isLocal) {
             updated.delete(pid);
           } else {
@@ -91,7 +112,7 @@ export const useMediasoup = ({
   }, []);
 
   /* -----------------------------------------------------
-   * Setup mediasoup client
+   * STEP 3 — Create MediasoupClient & listen to events
    * ----------------------------------------------------- */
   useEffect(() => {
     const client = new MediasoupClient({
@@ -102,38 +123,48 @@ export const useMediasoup = ({
 
     clientRef.current = client;
 
-    /* ---------------------- Local Stream ---------------------- */
-
+    /* --- local media available --- */
     client.on("localStream", (stream) => {
       if (!stream) return;
-
       setLocalStream(stream);
-
       stream.getTracks().forEach((track) => {
         updateParticipant(peerId, track);
       });
     });
 
-    /* ---------------------- New Consumer ---------------------- */
+    /* --- remote producer became available --- */
+    client.on("newConsumer", ({ peerId: remoteId, kind, track }) => {
+      const isScreen =
+        kind === "video" && track.label.toLowerCase().includes("screen");
 
-    client.on(
-      "newConsumer",
-      ({ peerId: remoteId, producerId, kind, track }) => {
-        // If the browser marks the track label with "screen", mark as screenShare
-        const isScreen =
-          kind === "video" && track.label.toLowerCase().includes("screen");
+      setRemoteStreams((prev) => [...prev, new MediaStream([track])]);
 
-        // Keep a raw MediaStream list for UI uses like grids
-        setRemoteStreams((prev) => [...prev, new MediaStream([track])]);
+      updateParticipant(remoteId, track, isScreen);
+    });
 
-        updateParticipant(remoteId, track, isScreen);
-      }
-    );
-
-    /* ---------------------- Consumer Closed ---------------------- */
-
+    /* --- remote producer closed --- */
     client.on("consumerClosed", ({ producerId }) => {
       removeTrack(producerId);
+    });
+
+    /* --- participants from server (joinRoomResponse) --- */
+    client.on("newParticipant", ({ peerId: pId, name, isHost }) => {
+      setParticipants((prev) => {
+        const updated = new Map(prev);
+        if (!updated.has(pId)) {
+          updated.set(pId, {
+            id: pId,
+            name,
+            stream: new MediaStream(),
+            isLocal: false,
+            isScreenShare: false,
+            isMuted: false,
+            isVideoOff: true,
+            isHost,
+          });
+        }
+        return updated;
+      });
     });
 
     return () => {
@@ -142,7 +173,7 @@ export const useMediasoup = ({
   }, [roomId, peerId, websocketUrl, updateParticipant, removeTrack]);
 
   /* -----------------------------------------------------
-   * Media controls
+   * STEP 4 — Media controls
    * ----------------------------------------------------- */
 
   const startMedia = useCallback(async (cam: boolean, mic: boolean) => {
@@ -153,7 +184,6 @@ export const useMediasoup = ({
       await client.enableWebcam();
       setIsWebcamEnabled(true);
     }
-
     if (mic) {
       await client.enableMic();
       setIsMicEnabled(true);
@@ -207,17 +237,18 @@ export const useMediasoup = ({
     setIsScreenSharing(false);
   }, []);
 
+  /* -----------------------------------------------------
+   * Return state & actions
+   * ----------------------------------------------------- */
   return {
     localStream,
     remoteStreams,
     participants,
 
-    // UI state
     isMicEnabled,
     isWebcamEnabled,
     isScreenSharing,
 
-    // Methods
     startMedia,
     stopMedia,
     toggleMic,
