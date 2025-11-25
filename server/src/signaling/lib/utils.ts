@@ -1,15 +1,17 @@
 import { WebSocket } from "ws";
-import type { RtpCapabilities } from "mediasoup/node/lib/types";
 import { createWorker } from "mediasoup";
 import { Room, roomsMap } from "./Room";
 import { Participant } from "./Participant";
+import {
+  MeetingRoomNotifications,
+  MeetingRoomResponses,
+} from "@src/types/mediasoup";
 
 export async function handleJoinRoom(
   ws: WebSocket,
   roomId: string,
   userId: string,
-  userName: string,
-  rtpCapabilities: RtpCapabilities
+  userName: string
 ) {
   let room = roomsMap.get(roomId);
   if (!room) {
@@ -29,9 +31,9 @@ export async function handleJoinRoom(
   const existingProducers = room.getProducersForOtherParticipants(userId);
   ws.send(
     JSON.stringify({
-      type: "joinRoom-response",
+      type: MeetingRoomResponses.JoinRoomResponse,
       payload: {
-        messageId: "initial-join-response", // Placeholder messageId
+        messageId: MeetingRoomResponses.JoinRoomResponse, // Placeholder messageId
         data: {
           producers: existingProducers.map((p) => ({
             ...p,
@@ -46,7 +48,7 @@ export async function handleJoinRoom(
   );
 
   // Notify other participants about the new participant
-  room.broadcast(userId, "newParticipant", {
+  room.broadcast(userId, MeetingRoomNotifications.NewParticipant, {
     userId: participant.userId,
     userName: participant.userName,
     isHost: participant.isHost,

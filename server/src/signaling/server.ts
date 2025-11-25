@@ -3,7 +3,7 @@ import { handleMessage } from "./handlers";
 
 export function startWebSocketServer() {
   const wss = new WebSocketServer({ port: 3001 });
-  
+
   wss.on("connection", (ws) => {
     console.log("🔗 WebSocket client connected");
 
