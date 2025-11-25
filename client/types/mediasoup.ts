@@ -1,6 +1,13 @@
-import { RtpCapabilities, RtpParameters, DtlsParameters, IceParameters, IceCandidate, MediaKind } from 'mediasoup-client/lib/types';
+import {
+  DtlsParameters,
+  IceCandidate,
+  IceParameters,
+  MediaKind,
+  RtpCapabilities,
+  RtpParameters,
+} from "mediasoup-client/types";
 
-export type WebSocketMessage = 
+export type WebSocketMessage =
   | JoinRoomRequest
   | RoomRouterRtpCapabilitiesResponse
   | CreateWebRtcTransportRequest
@@ -14,7 +21,7 @@ export type WebSocketMessage =
   | ProducerClosedNotification;
 
 export interface JoinRoomRequest {
-  type: 'join-room';
+  type: "join-room";
   data: {
     roomId: string;
     peerId: string;
@@ -22,23 +29,23 @@ export interface JoinRoomRequest {
 }
 
 export interface RoomRouterRtpCapabilitiesResponse {
-  type: 'room-router-rtp-capabilities';
+  type: "room-router-rtp-capabilities";
   data: {
     routerRtpCapabilities: RtpCapabilities;
   };
 }
 
 export interface CreateWebRtcTransportRequest {
-  type: 'create-web-rtc-transport';
+  type: "create-web-rtc-transport";
   data: {
-    direction: 'send' | 'recv';
+    direction: "send" | "recv";
   };
 }
 
 export interface WebRtcTransportCreatedResponse {
-  type: 'web-rtc-transport-created';
+  type: "web-rtc-transport-created";
   data: {
-    direction: 'send' | 'recv';
+    direction: "send" | "recv";
     params: {
       id: string;
       iceParameters: IceParameters;
@@ -49,7 +56,7 @@ export interface WebRtcTransportCreatedResponse {
 }
 
 export interface ConnectWebRtcTransportRequest {
-  type: 'connect-web-rtc-transport';
+  type: "connect-web-rtc-transport";
   data: {
     transportId: string;
     dtlsParameters: DtlsParameters;
@@ -57,7 +64,7 @@ export interface ConnectWebRtcTransportRequest {
 }
 
 export interface ProduceRequest {
-  type: 'produce';
+  type: "produce";
   data: {
     transportId: string;
     kind: MediaKind;
@@ -67,14 +74,14 @@ export interface ProduceRequest {
 }
 
 export interface ProduceResponse {
-  type: 'produce-response';
+  type: "produce-response";
   data: {
     id: string;
   };
 }
 
 export interface ConsumeRequest {
-  type: 'consume';
+  type: "consume";
   data: {
     transportId: string;
     producerId: string;
@@ -83,7 +90,7 @@ export interface ConsumeRequest {
 }
 
 export interface ConsumeResponse {
-  type: 'consume-response';
+  type: "consume-response";
   data: {
     id: string;
     producerId: string;
@@ -93,7 +100,7 @@ export interface ConsumeResponse {
 }
 
 export interface NewProducerNotification {
-  type: 'new-producer';
+  type: "new-producer";
   data: {
     peerId: string;
     producerId: string;
@@ -103,8 +110,46 @@ export interface NewProducerNotification {
 }
 
 export interface ProducerClosedNotification {
-  type: 'producer-closed';
+  type: "producer-closed";
   data: {
     producerId: string;
   };
 }
+
+export interface MediasoupClientOptions {
+  websocketUrl: string;
+  roomId: string;
+  peerId: string;
+}
+
+export interface ProducerInfo<
+  T extends Record<string, unknown> = Record<string, unknown>
+> {
+  id: string;
+  kind: MediaKind;
+  track: MediaStreamTrack;
+  appData?: T;
+}
+
+export interface Participant {
+  id: string;
+  name: string;
+  stream: MediaStream;
+  isLocal: boolean;
+  isScreenShare: boolean;
+}
+
+export type MediasoupEvents = {
+  localStream: MediaStream | undefined;
+  newConsumer: {
+    peerId: string;
+    producerId: string;
+    kind: MediaKind;
+    track: MediaStreamTrack;
+  };
+  consumerClosed: {
+    producerId: string;
+  };
+};
+
+export type Listener<T> = (payload: T) => void;
