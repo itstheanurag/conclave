@@ -1,7 +1,7 @@
 import { CONFIG } from "config";
-import { app } from "@src/app/server";
+import { app } from "@src/lib/server";
 import { startWebSocketServer } from "@src/signaling/server";
-import { startMediasoup } from "@src/mediasoup/worker";
+import { startMediasoup } from "@src/lib/mediasoup/worker";
 
 (async () => {
   const server = Bun.serve({
