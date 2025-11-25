@@ -15,8 +15,7 @@ export function GoogleSignInButton() {
       const data = await signInWithGoogle();
 
       if(data) {
-        console.log(data)
-        //   router.push("/dashboard");
+        router.push("/dashboard");
       }
     } finally {
       setLoading(false);

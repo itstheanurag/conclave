@@ -23,7 +23,7 @@ export const betterAuthOptions: BetterAuthOptions = {
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 2,
-    cookieCache: { enabled: false },
+    cookieCache: { enabled: true, strategy: "jwt" },
   },
 
   user: {

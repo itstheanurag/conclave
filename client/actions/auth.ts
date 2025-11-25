@@ -88,11 +88,6 @@ export async function handleEmailLogin() {
     toastSuccess("Signed in successfully!", t);
     handleRememberMe(email, rememberMe);
 
-    if (result?.data?.token) {
-      document.cookie = `better-auth.session=${result.data.token}; path=/; Secure; SameSite=Lax`;
-      localStorage.setItem("user", JSON.stringify(result.data.user));
-    }
-
     clearAuthForm();
     return result;
   } catch (err: any) {
@@ -205,8 +200,6 @@ export async function registerWithGithub() {
 export async function logout() {
   try {
     const result = await client.signOut();
-    document.cookie = `better-auth.session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax`;
-    localStorage.removeItem("user");
     store.set(authModeAtom, "login");
     clearAuthForm();
     return result;

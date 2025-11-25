@@ -3,73 +3,80 @@ import type { NextRequest } from "next/server";
 
 const ROUTES = {
   protected: ["/dashboard", "/settings"],
-  exclusive: ["/auth", "/"],
+  exclusive: ["/auth", "/"], // Routes only accessible by GUESTS
   public: ["/meet"],
 };
 
 export async function middleware(req: NextRequest) {
-  const token = req.cookies.get("better-auth.session")?.value;
-  const path = req.nextUrl.pathname;
+  const token = req.cookies.get("better-auth.session_data")?.value;
+  const { pathname } = req.nextUrl;
 
-  const isProtected = ROUTES.protected.some((route) => path.startsWith(route));
+  // 1. Check if route is protected
+  const isProtected = ROUTES.protected.some((route) => 
+    pathname.startsWith(route)
+  );
 
-  const isExclusive = ROUTES.exclusive.some((route) => path.startsWith(route));
+  // 2. Check if route is exclusive (Auth pages)
+  // FIX: Handle root "/" specifically so it doesn't match everything
+  const isExclusive = ROUTES.exclusive.some((route) => {
+    return route === "/" ? pathname === "/" : pathname.startsWith(route);
+  });
 
-  const isPublic = ROUTES.public.some((route) => path.startsWith(route));
-
-  if (isPublic) return NextResponse.next();
-
+  // 3. Handle Protected Routes
   if (isProtected) {
     if (!token) {
-      console.log("No token, redirecting to /auth");
+      // Detect if this is a prefetch to avoid console spam
+      const isPrefetch = req.headers.get("next-router-prefetch");
+      if (!isPrefetch) {
+        console.log(`[Middleware] No token on protected route: ${pathname}, redirecting...`);
+      }
       return NextResponse.redirect(new URL("/auth", req.url));
     }
 
+    // Optional: Server-side session validation
+    // Note: This adds latency. Only enable if strict security is required here.
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BETTER_AUTH_API}/get-session`,
         {
-          headers: {
-            cookie: `better-auth.session=${token}`,
-          },
+          headers: req.headers,
         }
       );
 
       if (!response.ok) {
-        const response = NextResponse.redirect(new URL("/auth", req.url));
-        response.cookies.delete("better-auth.session");
-        return response;
+        const res = NextResponse.redirect(new URL("/auth", req.url));
+        res.cookies.delete("better-auth.session_data");
+        return res;
       }
-
-      return NextResponse.next();
     } catch (error) {
-      //   console.error("Session validation error:", error);
-      const response = NextResponse.redirect(new URL("/auth", req.url));
-      response.cookies.delete("better-auth.session");
-      return response;
+      // On network error, we might want to allow them through or fail safe
+      // Here we fail safe to auth
+      const res = NextResponse.redirect(new URL("/auth", req.url));
+      res.cookies.delete("better-auth.session_data");
+      return res;
     }
+    
+    return NextResponse.next();
   }
 
-  // Handle exclusive routes (auth pages)
+  // 4. Handle Exclusive Routes (Redirect logged-in users away from /auth or /)
   if (isExclusive && token) {
-    // Don't validate here, just check if token exists
-    // Let the client-side handle validation
-    // console.log("Token exists on exclusive route, redirecting to /dashboard");
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
+  // 5. Allow all other traffic (Public routes, assets, etc)
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except:
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };

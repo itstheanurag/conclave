@@ -7,7 +7,7 @@ import { loadingSignInFormAtom } from "@/atoms";
 
 export function GithubSignInButton() {
   const [loading, setLoading] = useAtom(loadingSignInFormAtom);
-  // const router = useRouter();
+  const router = useRouter();
 
   const handleClick = async () => {
     setLoading(true);
@@ -15,7 +15,7 @@ export function GithubSignInButton() {
     const result = await signInWithGithub();
 
     if (result) {
-      // router.push("/dashboard");
+      router.push("/dashboard");
     }
   };
 

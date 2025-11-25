@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAtom } from "jotai";
 import { client } from "@/lib/auth-client";
 import {
@@ -12,8 +12,14 @@ export function useSession() {
   const [session, setSession] = useAtom(sessionAtom);
   const [loading, setLoading] = useAtom(sessionLoadingAtom);
   const [error, setError] = useAtom(sessionErrorAtom);
+  const fetchInitiated = useRef(false);
 
   useEffect(() => {
+    if (fetchInitiated.current) {
+      return;
+    }
+    fetchInitiated.current = true;
+
     let isMounted = true;
 
     async function fetchSession() {
@@ -46,7 +52,7 @@ export function useSession() {
     return () => {
       isMounted = false;
     };
-  }, [setSession, setLoading, setError]);
+  }, []);
 
   return { session, loading, error };
 }
