@@ -8,7 +8,7 @@ import { Toaster } from "sonner";
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const hideNavbarRoutes = ["/dashboard", "/settings", "/meet"];
+  const hideNavbarRoutes = ["/dashboard", "/settings", "/meet", "/call"];
 
   const shouldHideNavbar = hideNavbarRoutes.some((route) =>
     pathname.startsWith(route)

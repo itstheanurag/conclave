@@ -24,11 +24,18 @@ class Participant {
   recvTransport: Transport | null = null;
   producers: Map<string, Producer> = new Map();
   consumers: Map<string, Consumer> = new Map();
+  isHost: boolean;
 
-  constructor(ws: WebSocket, userId: string, userName: string) {
+  constructor(
+    ws: WebSocket,
+    userId: string,
+    userName: string,
+    isHost: boolean = false
+  ) {
     this.ws = ws;
     this.userId = userId;
     this.userName = userName;
+    this.isHost = isHost;
   }
 
   addProducer(producer: Producer) {
@@ -59,6 +66,7 @@ class Room {
   id: string;
   router: Router;
   participants: Map<string, Participant> = new Map(); // userId -> Participant
+  hostId: string | null = null;
 
   constructor(id: string, router: Router) {
     this.id = id;
@@ -67,10 +75,25 @@ class Room {
 
   addParticipant(participant: Participant) {
     this.participants.set(participant.userId, participant);
+    if (!this.hostId) {
+      this.hostId = participant.userId;
+      participant.isHost = true;
+    }
   }
 
   removeParticipant(userId: string) {
     this.participants.delete(userId);
+    if (this.hostId === userId) {
+      this.hostId = null; // Host left, reassign if needed or handle room closure
+      // For simplicity, if host leaves, next participant becomes host or room closes
+      if (this.participants.size > 0) {
+        const newHost = this.participants.values().next().value;
+        if (newHost) {
+          this.hostId = newHost.userId;
+          newHost.isHost = true;
+        }
+      }
+    }
   }
 
   getProducersForOtherParticipants(excludeUserId: string): ProducerInfo[] {
@@ -88,6 +111,18 @@ class Room {
       }
     });
     return allProducers;
+  }
+
+  getAllParticipantsInfo(): Array<{
+    userId: string;
+    userName: string;
+    isHost: boolean;
+  }> {
+    return Array.from(this.participants.values()).map((p) => ({
+      userId: p.userId,
+      userName: p.userName,
+      isHost: p.isHost,
+    }));
   }
 
   broadcast(senderUserId: string, type: string, payload: any) {
@@ -238,6 +273,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
         kind: producer.kind,
         participantId: participant.userId,
         participantName: participant.userName,
+        appData: producer.appData, // Include appData
       });
 
       ws.send(
@@ -249,6 +285,48 @@ export async function handleMessage(ws: WebSocket, message: string) {
           },
         })
       );
+      break;
+    }
+    case "closeProducer": {
+      const { roomId, userId, producerId } = msg.payload;
+      const room = roomsMap.get(roomId);
+      const participant = room?.participants.get(userId);
+
+      if (!room || !participant) {
+        ws.send(
+          JSON.stringify({
+            type: `${msg.type}-response`,
+            payload: {
+              messageId: msg.payload.messageId,
+              error: "Room or participant not found",
+            },
+          })
+        );
+        return;
+      }
+
+      const producer = participant.producers.get(producerId);
+      if (producer) {
+        producer.close();
+        participant.removeProducer(producerId);
+        room.broadcast(userId, "producerClosed", { producerId });
+        ws.send(
+          JSON.stringify({
+            type: `${msg.type}-response`,
+            payload: { messageId: msg.payload.messageId, data: "closed" },
+          })
+        );
+      } else {
+        ws.send(
+          JSON.stringify({
+            type: `${msg.type}-response`,
+            payload: {
+              messageId: msg.payload.messageId,
+              error: "Producer not found",
+            },
+          })
+        );
+      }
       break;
     }
     case "consume": {
@@ -305,6 +383,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
               producerId: consumer.producerId,
               kind: consumer.kind,
               rtpParameters: consumer.rtpParameters,
+              appData: producerToConsume.appData, // Include appData
             },
           },
         })
@@ -403,11 +482,12 @@ async function handleJoinRoom(
     console.log(`✨ New room created: ${roomId}`);
   }
 
-  const participant = new Participant(ws, userId, userName);
+  const isHost = room.participants.size === 0; // First participant to join is host
+  const participant = new Participant(ws, userId, userName, isHost);
   room.addParticipant(participant);
   console.log(`🟢 Participant ${userName} (${userId}) joined room: ${roomId}`);
 
-  // Send existing producers to the joining client
+  // Send existing producers and all participants info to the joining client
   const existingProducers = room.getProducersForOtherParticipants(userId);
   ws.send(
     JSON.stringify({
@@ -415,38 +495,22 @@ async function handleJoinRoom(
       payload: {
         messageId: "initial-join-response", // Placeholder messageId
         data: {
-          producers: existingProducers,
+          producers: existingProducers.map((p) => ({
+            ...p,
+            appData: room.participants.get(p.participantId)?.producers.get(p.id)
+              ?.appData,
+          })),
           routerRtpCapabilities: room.router.rtpCapabilities,
+          participants: room.getAllParticipantsInfo(), // Send all participants info
         },
       },
     })
   );
 
-  ws.on("close", () => {
-    console.log(`🔴 Participant ${userName} (${userId}) left room: ${roomId}`);
-    participant.close(); // Close all transports and producers/consumers for this participant
-    room.removeParticipant(userId);
-
-    // If the room is empty, close the room
-    if (room.participants.size === 0) {
-      room.close();
-      roomsMap.delete(roomId);
-      console.log(`🗑️ Room ${roomId} closed as it is empty.`);
-    }
-  });
-
-  ws.on("error", (error) => {
-    console.error(
-      `❌ WebSocket error for ${userName} (${userId}) in room ${roomId}:`,
-      error
-    );
-    // Handle error, potentially close participant resources
-    participant.close();
-    room.removeParticipant(userId);
-    if (room.participants.size === 0) {
-      room.close();
-      roomsMap.delete(roomId);
-      console.log(`🗑️ Room ${roomId} closed due to error.`);
-    }
+  // Notify other participants about the new participant
+  room.broadcast(userId, "newParticipant", {
+    userId: participant.userId,
+    userName: participant.userName,
+    isHost: participant.isHost,
   });
 }

@@ -1,14 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import MeetingHeader from "@/components/call/header";
 import MeetingControl from "@/components/call/MeetingControl";
 import MeetingChat from "@/components/call/MeetingChat";
 import SidebarParticipants from "@/components/call/participants";
-import VideoGrid from "@/components/call/VideoGrid";
 import { cn } from "@/lib/utils";
-import useWebRTC from "@/hooks/useWebRTC";
 import { initialMessages } from "@/data/meetings/meetings";
 import { useParams } from "next/navigation";
+import { useMediasoup } from "@/hooks/useMediasoup"; // Import the new hook
 
 export default function CallPage() {
   const { id } = useParams();
@@ -20,23 +19,42 @@ export default function CallPage() {
   const [showParticipants, setShowParticipants] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [message, setMessage] = useState("");
-  const [viewMode, setViewMode] = useState<"speaker" | "grid">("grid");
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [viewMode, setViewMode] = useState<"speaker" | "grid">("grid"); // Keep for potential future use with VideoGrid
+
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null); // For simplicity, showing one remote video
 
   const {
-    participants,
+    localStream,
+    remoteStreams,
+    participants, // This will be an empty map for now, as useMediasoup doesn't populate it yet
+    isMicEnabled,
+    isWebcamEnabled,
+    isScreenSharing,
     startMedia,
-    startScreenShare,
     stopMedia,
+    startScreenShare,
     stopScreenShare,
-    isScreenSharingActive,
     toggleMic,
     toggleCamera,
-  } = useWebRTC(roomId, userId, userName);
+  } = useMediasoup({
+    roomId,
+    peerId: userId,
+    websocketUrl: "ws://localhost:3000",
+  }); // TODO: Replace with actual WebSocket URL
 
   useEffect(() => {
-    setIsScreenSharing(isScreenSharingActive);
-  }, [isScreenSharingActive]);
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
+
+  useEffect(() => {
+    // For simplicity, just display the first remote stream
+    if (remoteVideoRef.current && remoteStreams.length > 0) {
+      remoteVideoRef.current.srcObject = remoteStreams[0];
+    }
+  }, [remoteStreams]);
 
   useEffect(() => {
     startMedia(true, true); // Automatically start camera and microphone
@@ -92,12 +110,28 @@ export default function CallPage() {
 
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 flex flex-col transition-all duration-300">
-          <VideoGrid
-            participants={Array.from(participants.values())}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            isScreenSharing={isScreenSharing}
-          />
+          <div className="flex-1 flex justify-center items-center bg-gray-800">
+            {localStream && (
+              <video
+                ref={localVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-1/2 h-full object-cover"
+              />
+            )}
+            {remoteStreams.length > 0 && (
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="w-1/2 h-full object-cover"
+              />
+            )}
+            {!localStream && remoteStreams.length === 0 && (
+              <p className="text-white">No media streams active</p>
+            )}
+          </div>
         </main>
 
         <div

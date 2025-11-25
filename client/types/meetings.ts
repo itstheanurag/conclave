@@ -54,4 +54,5 @@ export interface MeetingParticipant {
   isHost: boolean;
   isSpeaking?: boolean;
   stream?: MediaStream;
+  isScreenShare?: boolean;
 }
