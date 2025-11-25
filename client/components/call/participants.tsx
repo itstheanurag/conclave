@@ -9,7 +9,7 @@ import {
   Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MeetingParticipant } from "@/types";
+import { MeetingParticipant } from "@/types/mediasoup";
 
 interface SidebarParticipantsProps {
   participants: MeetingParticipant[];

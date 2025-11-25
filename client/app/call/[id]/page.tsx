@@ -1,33 +1,37 @@
 "use client";
+
 import React, { useState, useEffect, useRef } from "react";
 import MeetingHeader from "@/components/call/header";
-import MeetingControl from "@/components/call/MeetingControl";
 import MeetingChat from "@/components/call/MeetingChat";
 import SidebarParticipants from "@/components/call/participants";
 import { cn } from "@/lib/utils";
 import { initialMessages } from "@/data/meetings/meetings";
 import { useParams } from "next/navigation";
-import { useMediasoup } from "@/hooks/useMediasoup"; // Import the new hook
+import { useMediasoup } from "@/hooks/useMediasoup";
+import MeetingControlDock from "@/components/call/MeetingControl";
 
 export default function CallPage() {
   const { id } = useParams();
   const roomId = id as string;
+
   const [userId] = useState(() => Math.random().toString(36).substring(2, 15));
-  const [userName] = useState(() => `Guest-${userId.substring(0, 5)}`);
 
   const [messages, setMessages] = useState(initialMessages);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [message, setMessage] = useState("");
-  const [viewMode, setViewMode] = useState<"speaker" | "grid">("grid"); // Keep for potential future use with VideoGrid
 
+  // Video refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null); // For simplicity, showing one remote video
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
+  // -----------------------------
+  // MEDIASOUP HOOK
+  // -----------------------------
   const {
     localStream,
     remoteStreams,
-    participants, // This will be an empty map for now, as useMediasoup doesn't populate it yet
+    participants,
     isMicEnabled,
     isWebcamEnabled,
     isScreenSharing,
@@ -40,77 +44,83 @@ export default function CallPage() {
   } = useMediasoup({
     roomId,
     peerId: userId,
-    websocketUrl: "ws://localhost:3000",
-  }); // TODO: Replace with actual WebSocket URL
+    websocketUrl: "ws://localhost:3001",
+  });
 
+  // Attach local stream
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
     }
   }, [localStream]);
 
+  // Attach first remote stream
   useEffect(() => {
-    // For simplicity, just display the first remote stream
     if (remoteVideoRef.current && remoteStreams.length > 0) {
       remoteVideoRef.current.srcObject = remoteStreams[0];
     }
   }, [remoteStreams]);
 
+  // Auto start cam & mic
   useEffect(() => {
-    startMedia(true, true); // Automatically start camera and microphone
+    (async () => {
+      await startMedia(true, true);
+    })();
 
     return () => {
-      stopMedia(); // Stop media when component unmounts
+      stopMedia(); // no await
     };
   }, [startMedia, stopMedia]);
 
+  // -----------------------------
+  // Messaging
+  // -----------------------------
   const handleSendMessage = () => {
-    if (message.trim()) {
-      const newMessage = {
-        id: messages.length + 1,
+    if (!message.trim()) return;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
         sender: "You",
         text: message,
+        isMe: true,
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        isMe: true,
-      };
-      setMessages([...messages, newMessage]);
-      setMessage("");
-    }
+      },
+    ]);
+
+    setMessage("");
   };
 
+  // -----------------------------
+  // Participant Controls
+  // -----------------------------
   const handleMuteToggle = (id: string) => {
-    if (id === userId) {
-      toggleMic();
-    } else {
-      console.log(`Toggle mute for remote participant ${id}`);
-      // For remote participants, this would involve sending a signaling message to the server
-    }
+    if (id === userId) toggleMic();
   };
 
   const handleVideoToggle = (id: string) => {
-    if (id === userId) {
-      toggleCamera();
-    } else {
-      console.log(`Toggle video for remote participant ${id}`);
-      // For remote participants, this would involve sending a signaling message to the server
-    }
+    if (id === userId) toggleCamera();
   };
 
   const handleRemoveParticipant = (id: string) => {
     console.log(`Remove participant ${id}`);
-    // Implement actual participant removal logic via signaling to the server
   };
 
+  // -----------------------------
+  // RENDER
+  // -----------------------------
   return (
     <div className="h-screen w-full bg-base-100 flex flex-col font-sans">
       <MeetingHeader />
 
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 flex flex-col transition-all duration-300">
-          <div className="flex-1 flex justify-center items-center bg-gray-800">
+          <div className="flex-1 flex justify-center items-center bg-gray-800 gap-2">
+            {/* LOCAL VIDEO */}
             {localStream && (
               <video
                 ref={localVideoRef}
@@ -120,6 +130,8 @@ export default function CallPage() {
                 className="w-1/2 h-full object-cover"
               />
             )}
+
+            {/* REMOTE VIDEO */}
             {remoteStreams.length > 0 && (
               <video
                 ref={remoteVideoRef}
@@ -128,18 +140,18 @@ export default function CallPage() {
                 className="w-1/2 h-full object-cover"
               />
             )}
+
             {!localStream && remoteStreams.length === 0 && (
               <p className="text-white">No media streams active</p>
             )}
           </div>
         </main>
 
+        {/* SIDEBAR */}
         <div
           className={cn(
             "w-96 h-full flex-shrink-0 transition-all duration-300 ease-in-out",
-            {
-              "-mr-96": !showParticipants && !showChat,
-            }
+            { "-mr-96": !showParticipants && !showChat }
           )}
         >
           {showParticipants ? (
@@ -161,26 +173,16 @@ export default function CallPage() {
         </div>
       </div>
 
+      {/* FOOTER CONTROLS */}
       <footer className="relative z-30">
-        <MeetingControl
-          participants={Array.from(participants.values())}
-          showParticipants={showParticipants}
-          setShowParticipants={(show) => {
-            setShowParticipants(show);
-            setShowChat(false);
-          }}
-          showChat={showChat}
-          setShowChat={(show) => {
-            setShowChat(show);
-            setShowParticipants(false);
-          }}
+        <MeetingControlDock
+          isMicEnabled={isMicEnabled}
+          isWebcamEnabled={isWebcamEnabled}
           isScreenSharing={isScreenSharing}
-          startMedia={startMedia}
-          startScreenShare={startScreenShare}
-          stopMedia={stopMedia}
-          stopScreenShare={stopScreenShare}
           toggleMic={toggleMic}
           toggleCamera={toggleCamera}
+          startScreenShare={startScreenShare}
+          stopScreenShare={stopScreenShare}
         />
       </footer>
     </div>
