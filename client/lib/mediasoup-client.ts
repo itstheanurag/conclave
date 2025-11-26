@@ -175,7 +175,9 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
       }
 
       case "createWebRtcTransportResponse": {
-        const { direction, params } = message.data;
+        if (message.payload?.error) return;
+
+        const { direction, params } = message.payload;
 
         if (direction === "send") {
           this.sendTransport = this.device?.createSendTransport(params);
