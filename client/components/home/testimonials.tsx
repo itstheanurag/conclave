@@ -57,7 +57,7 @@ const MarqueeColumn = ({
   speed?: number;
 }) => {
   return (
-    <div className="flex overflow-hidden relative w-full mask-gradient">
+    <div className="flex overflow-hidden relative w-full">
       {/* The Fade Masks for the edges */}
       <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-base-100 to-transparent z-10" />
       <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-base-100 to-transparent z-10" />
@@ -71,7 +71,7 @@ const MarqueeColumn = ({
         {items.map((t, i) => (
           <div
             key={i}
-            className="flex-shrink-0 w-[350px] p-6 rounded-2xl bg-base-200/50 backdrop-blur-sm border border-base-content/5 hover:border-primary/30 transition-colors"
+            className="flex-shrink-0 w-[350px] p-6 rounded-xl bg-base-200/50 backdrop-blur-sm border border-base-content/5 hover:border-primary/30 transition-colors"
           >
             <div className="flex items-center gap-4 mb-4">
               <img
@@ -105,18 +105,18 @@ const MarqueeColumn = ({
 
 export default function Testimonials() {
   return (
-    <section className="relative bg-base-100 py-24 sm:py-32 overflow-hidden">
+    <section className="relative py-24 sm:py-32 overflow-hidden bg-base-200">
       {/* 1. Reuse the Grid Background for consistency */}
       <div
-        className="absolute inset-0 z-0 opacity-[0.1]" // Higher opacity to make dots pop
+        className="absolute inset-1 z-0 opacity-[0.1]" // Higher opacity to make dots pop
         style={{
           backgroundImage: `radial-gradient(circle 2px at 0.5px 0.5px, #000 100%, transparent 0)`,
           backgroundSize: "20px 20px",
         }}
       />
 
-      <div className="relative z-10">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-16 text-center">
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <div className="mx-auto px-6 lg:px-8 mb-16 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
