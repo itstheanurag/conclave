@@ -186,9 +186,11 @@ export type MediasoupEvents = {
     name: string;
   };
 
-  participantLeft?: {
+  participantLeft: {
     peerId: string;
   };
+
+  deviceLoaded: undefined;
 };
 
 export type Listener<T> = (payload: T) => void;

@@ -14,7 +14,7 @@ import {
   WebSocketMessage,
   Listener,
   MediasoupEvents,
-} from "../types/mediasoup";
+} from "@/types/mediasoup";
 
 import type {
   MediaKind,
@@ -138,6 +138,12 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
           }
         }
 
+        break;
+      }
+
+      case "participantLeft": {
+        const { userId } = (message as any).payload ?? (message as any).data;
+        this.emit("participantLeft", { peerId: userId });
         break;
       }
 
@@ -299,6 +305,8 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
         type: "createWebRtcTransport",
         data: { direction: "recv" },
       });
+
+      this.emit("deviceLoaded", undefined);
     } catch (err: any) {
       console.error("Error loading mediasoup device:", err);
     }
@@ -570,6 +578,10 @@ export class MediasoupClient extends TypedEventEmitter<MediasoupEvents> {
   }
 
   public close() {
+    this.ws.onclose = null;
+    this.ws.onerror = null;
+    this.ws.onmessage = null;
+    this.ws.onopen = null;
     this.ws.close();
     this.sendTransport?.close();
     this.recvTransport?.close();

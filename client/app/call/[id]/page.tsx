@@ -5,18 +5,18 @@ import MeetingHeader from "@/components/call/header";
 import MeetingChat from "@/components/call/MeetingChat";
 import SidebarParticipants from "@/components/call/participants";
 import { cn } from "@/lib/utils";
-import { initialMessages } from "@/data/meetings/meetings";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useMediasoup } from "@/hooks/useMediasoup";
 import MeetingControlDock from "@/components/call/MeetingControl";
 import ParticipantTile from "@/components/call/participant-tile";
 
 export default function CallPage() {
   const { id } = useParams();
+  const router = useRouter();
   const roomId = id as string;
 
   const [userId] = useState(() => Math.random().toString(36).substring(2, 15));
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<any[]>([]);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [message, setMessage] = useState("");
@@ -32,6 +32,7 @@ export default function CallPage() {
     isMicEnabled,
     isWebcamEnabled,
     isScreenSharing,
+    isDeviceLoaded,
   } = useMediasoup({
     roomId,
     peerId: userId,
@@ -40,12 +41,14 @@ export default function CallPage() {
 
   /* Auto Start Media */
   useEffect(() => {
-    startMedia(true, true); // don't await here
+    if (isDeviceLoaded) {
+      startMedia(true, true);
+    }
 
     return () => {
-      stopMedia(); // also don't await here
+      stopMedia();
     };
-  }, []);
+  }, [isDeviceLoaded]);
 
   /* Send Chat */
   const handleSendMessage = () => {
@@ -77,14 +80,31 @@ export default function CallPage() {
     if (id === userId) toggleCamera();
   };
 
+  const handleLeave = () => {
+    router.push("/dashboard");
+  };
+
   return (
     <div className="h-screen w-full bg-base-100 flex flex-col font-sans">
       <MeetingHeader />
 
       <div className="flex-1 flex overflow-hidden">
         {/* MAIN VIDEO GRID */}
-        <main className="flex-1 p-4 bg-black overflow-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 h-full">
+        <main className="flex-1 p-4 bg-black overflow-hidden flex items-center justify-center">
+          <div
+            className={cn(
+              "grid gap-4 w-full h-full max-h-full",
+              participants.size <= 1
+                ? "grid-cols-1"
+                : participants.size === 2
+                ? "grid-cols-1 md:grid-cols-2"
+                : participants.size <= 4
+                ? "grid-cols-2"
+                : participants.size <= 9
+                ? "grid-cols-2 md:grid-cols-3"
+                : "grid-cols-3 md:grid-cols-4"
+            )}
+          >
             {Array.from(participants.values()).map((p) => (
               <ParticipantTile
                 key={p.id}
@@ -131,6 +151,7 @@ export default function CallPage() {
           toggleCamera={toggleCamera}
           startScreenShare={startScreenShare}
           stopScreenShare={stopScreenShare}
+          onLeave={handleLeave}
         />
       </footer>
     </div>

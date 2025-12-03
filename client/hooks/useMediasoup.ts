@@ -17,6 +17,7 @@ export const useMediasoup = ({
   const [isMicEnabled, setIsMicEnabled] = useState(false);
   const [isWebcamEnabled, setIsWebcamEnabled] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [isDeviceLoaded, setIsDeviceLoaded] = useState(false);
 
   const clientRef = useRef<MediasoupClient | null>(null);
 
@@ -33,9 +34,9 @@ export const useMediasoup = ({
           stream: new MediaStream(),
           isLocal: true,
           isScreenShare: false,
-          isMuted: false,
-          isVideoOff: false,
-          isHost: false,
+          isMuted: true,
+          isVideoOff: true,
+          isHost: true,
         });
       }
       return updated;
@@ -62,6 +63,8 @@ export const useMediasoup = ({
             isVideoOff: false,
             isHost: false,
           };
+        } else {
+          participant = { ...participant };
         }
 
         // Remove old track (same kind)
@@ -72,6 +75,10 @@ export const useMediasoup = ({
 
         // Add new track
         participant.stream?.addTrack(track);
+
+        if (track.kind === "video" && !screenShare) {
+          participant.isVideoOff = false;
+        }
 
         if (screenShare) participant.isScreenShare = true;
 
@@ -97,12 +104,17 @@ export const useMediasoup = ({
           .find((t) => t.id === producerIdToRemove);
 
         if (track) {
-          p.stream.removeTrack(track);
+          const newP = { ...p }; // Clone
+          newP.stream?.removeTrack(track);
 
-          if (p.stream.getTracks().length === 0 && !p.isLocal) {
+          if (track.kind === "video") {
+            newP.isVideoOff = true;
+          }
+
+          if (newP.stream?.getTracks().length === 0 && !newP.isLocal) {
             updated.delete(pid);
           } else {
-            updated.set(pid, p);
+            updated.set(pid, newP);
           }
         }
       }
@@ -165,6 +177,19 @@ export const useMediasoup = ({
         }
         return updated;
       });
+    });
+
+    client.on("participantLeft", ({ peerId }) => {
+      setParticipants((prev) => {
+        const updated = new Map(prev);
+        updated.delete(peerId);
+        return updated;
+      });
+    });
+
+    client.on("deviceLoaded", () => {
+      console.log("Device loaded, ready to produce media");
+      setIsDeviceLoaded(true);
     });
 
     return () => {
@@ -255,5 +280,6 @@ export const useMediasoup = ({
     toggleCamera,
     startScreenShare,
     stopScreenShare,
+    isDeviceLoaded,
   };
 };
