@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const EnvSchema = z.object({
-  PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().default(8080),
 
   ALLOWED_ORIGINS: z
     .string()
@@ -39,7 +39,6 @@ const EnvSchema = z.object({
   GITHUB_CLIENT_ID: z.string(),
   GITHUB_CLIENT_SECRET: z.string(),
 
-  // 🧾 Extracted from Bun/NPM automatically
   npm_package_name: z.string().default("unknown-app"),
   npm_package_version: z.string().default("0.0.0"),
   npm_package_description: z.string().default(""),

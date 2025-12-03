@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { createWorker } from "mediasoup";
+import { getWorker, mediaCodecs } from "@src/lib/mediasoup/worker";
 import { Room, roomsMap } from "./Room";
 import { Participant } from "./Participant";
 import {
@@ -16,8 +16,8 @@ export async function handleJoinRoom(
   let room = roomsMap.get(roomId);
   if (!room) {
     console.log("Room does not exists creating one");
-    const worker = await createWorker();
-    const router = await worker.createRouter();
+    const worker = getWorker();
+    const router = await worker.createRouter({ mediaCodecs });
     room = new Room(roomId, router);
     roomsMap.set(roomId, room);
     console.log(`✨ New room created: ${roomId}`);
@@ -54,4 +54,23 @@ export async function handleJoinRoom(
     userName: participant.userName,
     isHost: participant.isHost,
   });
+}
+
+export function handleDisconnect(roomId: string, peerId: string) {
+  const room = roomsMap.get(roomId);
+  if (!room) return;
+
+  room.removeParticipant(peerId);
+  console.log(`🔴 Participant ${peerId} left room: ${roomId}`);
+
+  // Notify others
+  room.broadcast(peerId, MeetingRoomNotifications.ParticipantLeft, {
+    userId: peerId,
+  });
+
+  if (room.participants.size === 0) {
+    room.close();
+    roomsMap.delete(roomId);
+    console.log(`🔥 Room ${roomId} closed (empty)`);
+  }
 }

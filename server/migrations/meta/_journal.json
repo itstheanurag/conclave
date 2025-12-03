@@ -8,6 +8,13 @@
       "when": 1764050180767,
       "tag": "0000_lumpy_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1764760821916,
+      "tag": "0001_special_kulan_gath",
+      "breakpoints": true
     }
   ]
 }

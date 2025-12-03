@@ -32,3 +32,6 @@ export async function startMediasoup() {
 }
 
 export const getRouter = () => router;
+export const getWorker = () => worker;
+
+export { mediaCodecs };

@@ -35,4 +35,8 @@ routes.openapi(helloRoute, (c) => {
   return c.json({ message: `Hello ${name ?? "World"}!` });
 });
 
+import meetingsRoute from "./meetings";
+
+routes.route("/meetings", meetingsRoute);
+
 export default routes;
