@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import React from "react";
 import { MeetingSummary } from "@/types";
@@ -53,17 +54,17 @@ export default function MeetingList({
                 <div className="font-medium text-base-content group-hover:text-primary transition">
                   {m.title ?? `Meeting ${m.id}`}
                 </div>
-                {m.project && (
-                  <div className="mt-1 text-sm text-base-content/70 flex items-center gap-2">
+                <div className="mt-1 text-sm text-base-content/70 flex items-center gap-2">
+                  {m.project && (
                     <span className="inline-block bg-primary/10 text-primary px-2 py-0.5 rounded-md text-xs">
                       {m.project.name}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-base-content/50">
-                      <Calendar size={12} />
-                      {new Date(m.createdAt ?? Date.now()).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
+                  )}
+                  <span className="flex items-center gap-1 text-xs text-base-content/50">
+                    <Calendar size={12} />
+                    {new Date(m.createdAt ?? Date.now()).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
 
               {/* Right */}
@@ -73,15 +74,24 @@ export default function MeetingList({
                   <span>{m.participantsCount ?? 0}</span>
                 </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelect(m.id);
-                  }}
-                  className="btn btn-sm btn-primary btn-outline"
-                >
-                  View
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/call/${m.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="btn btn-sm btn-primary"
+                  >
+                    Join
+                  </Link>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(m.id);
+                    }}
+                    className="btn btn-sm btn-outline"
+                  >
+                    View
+                  </button>
+                </div>
               </div>
             </div>
           ))}

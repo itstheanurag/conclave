@@ -5,25 +5,47 @@ import { meetingsAtom, currentMeetingAtom, usernameAtom } from "@/atoms";
 import { toast } from "sonner";
 import MeetingList from "./MeetingLists";
 import MeetingDetails from "./MeetingDetails";
-import { mockMeetings } from "@/data/meetings/meetings";
 
 export default function MeetingsPage() {
   const [meetings, setMeetings] = useAtom(meetingsAtom);
-  
+
   const [currentMeeting, setCurrentMeeting] = useAtom(currentMeetingAtom);
   const [username, setUsername] = useAtom(usernameAtom);
   const [loading, setLoading] = useState(false);
+  const API_URL = "http://localhost:8080/api";
 
   async function fetchMeetings() {
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 500));
-      setMeetings(mockMeetings);
+      const res = await fetch(`${API_URL}/meetings`);
+      if (!res.ok) throw new Error("Failed to fetch meetings");
+      const data = await res.json();
+      setMeetings(data);
     } catch (err) {
       console.error(err);
       toast.error("Could not load meetings");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function createMeeting() {
+    try {
+      const res = await fetch(`${API_URL}/meetings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Meeting by ${username || "User"}`,
+          hostId: username || "anonymous",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create meeting");
+      const newMeeting = await res.json();
+      toast.success("Meeting created");
+      fetchMeetings();
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not create meeting");
     }
   }
 
@@ -49,10 +71,7 @@ export default function MeetingsPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
-          <button
-            className="btn btn-primary"
-            onClick={() => toast.success("Meeting created (dummy)")}
-          >
+          <button className="btn btn-primary" onClick={createMeeting}>
             Create Meeting
           </button>
         </div>

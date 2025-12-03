@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { meetingDetailsAtom, currentMeetingAtom, meetingsAtom } from "@/atoms";
 import { MeetingDetails as MeetingDetailsType } from "@/types";
-import { mockMeetingDetails } from "@/data/meetings/meetings";
 import MeetingMessages from "./MeetingMessages";
 import MeetingRecordings from "./MeetingRecordings";
 import MeetingParticipants from "./MeetingParticipants";
+import Link from "next/link";
 
 export default function MeetingDetails({
   meetingId,
@@ -17,25 +17,28 @@ export default function MeetingDetails({
   const [loading, setLoading] = useState(false);
   const [meetings] = useAtom(meetingsAtom);
 
+  const API_URL = "http://localhost:8080/api";
+
   useEffect(() => {
     if (!meetingId) return;
 
     setLoading(true);
 
-    setTimeout(() => {
-      const data =
-        mockMeetingDetails[meetingId] ??
-        ({
-          id: meetingId,
-          title: `Meeting ${meetingId}`,
-          participants: [],
-          messages: [],
-          recordings: [],
-        } as MeetingDetailsType);
-
-      setDetails(data);
-      setLoading(false);
-    }, 400);
+    fetch(`${API_URL}/meetings/${meetingId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed");
+        return res.json();
+      })
+      .then((data) => {
+        setDetails(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        setDetails(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [meetingId, setDetails]);
 
   if (!meetingId)
@@ -55,8 +58,13 @@ export default function MeetingDetails({
   return (
     <div className="col-span-2 card bg-base-200 shadow-sm p-4 space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">{details.title}</h2>
-        <div className="text-sm text-base-content/60">ID: {details.id}</div>
+        <div>
+          <h2 className="text-xl font-bold">{details.title}</h2>
+          <div className="text-sm text-base-content/60">ID: {details.id}</div>
+        </div>
+        <Link href={`/call/${details.id}`} className="btn btn-primary">
+          Join Meeting
+        </Link>
       </div>
 
       <MeetingMessages messages={details.messages ?? []} />

@@ -1,6 +1,13 @@
 "use client";
 
-import { Mic, MicOff, Video, VideoOff, MonitorUp } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  MonitorUp,
+  PhoneOff,
+} from "lucide-react";
 import React from "react";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +20,7 @@ interface MeetingControlProps {
   toggleCamera: () => void;
   startScreenShare: () => void;
   stopScreenShare: () => void;
+  onLeave: () => void;
 }
 
 const DockButton = ({
@@ -45,6 +53,7 @@ export default function MeetingControlDock({
   toggleCamera,
   startScreenShare,
   stopScreenShare,
+  onLeave,
 }: MeetingControlProps) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
@@ -82,6 +91,16 @@ export default function MeetingControlDock({
         >
           <MonitorUp className="w-6 h-6" />
         </DockButton>
+
+        <div className="w-px h-8 bg-base-content/20 mx-2" />
+
+        {/* Leave Call */}
+        <button
+          onClick={onLeave}
+          className="btn btn-circle btn-lg btn-error transition-all"
+        >
+          <PhoneOff className="w-6 h-6 text-white" />
+        </button>
       </div>
     </div>
   );
