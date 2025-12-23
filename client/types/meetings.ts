@@ -24,17 +24,19 @@ export type Recording = {
   durationSeconds?: number; // Optional — raw seconds
 };
 
+export type Participant = {
+  id: string;
+  name: string;
+  role?: string;
+  joinedAt?: string;
+};
+
 export type MeetingDetails = {
   id: string;
   title?: string;
   createdAt?: string;
   project?: { id: string; name: string } | null;
-  participants?: {
-    id: string;
-    name: string;
-    role: string;
-    joinedAt?: string;
-  }[];
+  participants?: Participant[];
   messages?: Message[];
   transcript?: {
     id: string;
@@ -45,4 +47,3 @@ export type MeetingDetails = {
   recordings?: Recording[];
   meta?: Record<string, any>;
 };
-

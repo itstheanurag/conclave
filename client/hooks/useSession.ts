@@ -1,17 +1,18 @@
 import { useEffect, useRef } from "react";
-import { useAtom } from "jotai";
 import { client } from "@/lib/auth-client";
-import {
-  sessionAtom,
-  sessionLoadingAtom,
-  sessionErrorAtom,
-} from "@/atoms/session";
 import { SessionData } from "@/types/session";
+import { useAuthStore } from "@/stores/authStore";
 
 export function useSession() {
-  const [session, setSession] = useAtom(sessionAtom);
-  const [loading, setLoading] = useAtom(sessionLoadingAtom);
-  const [error, setError] = useAtom(sessionErrorAtom);
+  const {
+    session,
+    sessionLoading: loading,
+    sessionError: error,
+    setSession,
+    setSessionLoading,
+    setSessionError,
+  } = useAuthStore();
+
   const fetchInitiated = useRef(false);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export function useSession() {
     let isMounted = true;
 
     async function fetchSession() {
-      setLoading(true);
+      setSessionLoading(true);
       try {
         const result = await client.getSession();
         if (!isMounted) return;
@@ -40,10 +41,10 @@ export function useSession() {
         }
 
         setSession(sessionData);
-      } catch (err: any) {
-        if (isMounted) setError(err);
+      } catch (err: unknown) {
+        if (isMounted) setSessionError(err as Error);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) setSessionLoading(false);
       }
     }
 
@@ -52,7 +53,7 @@ export function useSession() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [setSession, setSessionLoading, setSessionError]);
 
   return { session, loading, error };
 }
