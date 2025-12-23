@@ -7,7 +7,7 @@ const ROUTES = {
   public: ["/meet"],
 };
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const token = req.cookies.get("better-auth.session_data")?.value;
   const { pathname } = req.nextUrl;
 

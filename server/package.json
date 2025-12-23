@@ -1,6 +1,9 @@
 {
   "name": "server",
   "scripts": {
+    "mediasoup:build": "pnpm rebuild mediasoup",
+    "prebuild": "pnpm run mediasoup:build",
+    "build": "bun run src/index.ts",
     "dev": "bun --hot src/index.ts",
     "db:generate": "bunx drizzle-kit generate",
     "db:migrate": "bunx drizzle-kit migrate",
