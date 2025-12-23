@@ -1,11 +1,25 @@
 import { WebSocket } from "ws";
 import { createWebRtcTransport } from "@src/lib/mediasoup/transport";
-import { roomsMap, handleJoinRoom } from "./lib";
+import { roomsMap, handleJoinRoom, Room, Participant } from "./lib";
 import {
   MeetingRoomEvents,
   MeetingRoomNotifications,
   MeetingRoomResponses,
 } from "@src/types/mediasoup";
+
+// Helper to find participant by their WebSocket connection
+function findParticipantByWs(
+  ws: WebSocket
+): { room: Room; participant: Participant } | null {
+  for (const room of Array.from(roomsMap.values())) {
+    for (const participant of Array.from(room.participants.values())) {
+      if (participant.ws === ws) {
+        return { room, participant };
+      }
+    }
+  }
+  return null;
+}
 
 export async function handleMessage(ws: WebSocket, message: string) {
   const msg = JSON.parse(message);
@@ -21,9 +35,25 @@ export async function handleMessage(ws: WebSocket, message: string) {
         msg.data.userName
       );
     case MeetingRoomEvents.CreateWebRtcTransport: {
-      const { roomId, userId, producing, consuming } = msg.data;
-      const room = roomsMap.get(roomId);
-      const participant = room?.participants.get(userId);
+      // Support both { direction: 'send'/'recv' } and { producing, consuming } formats
+      const { roomId, userId, producing, consuming, direction } = msg.data;
+
+      // Determine transport direction
+      const isSend = direction === "send" || producing === true;
+      const isRecv = direction === "recv" || consuming === true;
+
+      // Find the participant's room and userId from stored connection if not provided
+      let room = roomId ? roomsMap.get(roomId) : undefined;
+      let participant = room?.participants.get(userId);
+
+      // If roomId/userId not provided in message, try to find from connection context
+      if (!room || !participant) {
+        const found = findParticipantByWs(ws);
+        if (found) {
+          room = found.room;
+          participant = found.participant;
+        }
+      }
 
       if (!room || !participant) {
         ws.send(
@@ -32,6 +62,7 @@ export async function handleMessage(ws: WebSocket, message: string) {
             payload: {
               messageId: msg.data.messageId,
               error: "Room or participant not found",
+              direction: isSend ? "send" : "recv",
             },
           })
         );
@@ -40,9 +71,9 @@ export async function handleMessage(ws: WebSocket, message: string) {
 
       const { transport, params } = await createWebRtcTransport();
 
-      if (producing) {
+      if (isSend) {
         participant.sendTransport = transport;
-      } else if (consuming) {
+      } else if (isRecv) {
         participant.recvTransport = transport;
       }
 
@@ -51,7 +82,8 @@ export async function handleMessage(ws: WebSocket, message: string) {
           type: MeetingRoomResponses.CreateWebRtcTransportResponse,
           payload: {
             messageId: msg.data.messageId,
-            data: {
+            direction: isSend ? "send" : "recv",
+            params: {
               id: params.id,
               iceParameters: params.iceParameters,
               iceCandidates: params.iceCandidates,
@@ -65,8 +97,18 @@ export async function handleMessage(ws: WebSocket, message: string) {
     }
     case MeetingRoomEvents.ConnectWebRtcTransport: {
       const { roomId, userId, transportId, dtlsParameters } = msg.data;
-      const room = roomsMap.get(roomId);
-      const participant = room?.participants.get(userId);
+
+      // Try to find room/participant from message data first, then fallback to WS lookup
+      let room = roomId ? roomsMap.get(roomId) : undefined;
+      let participant = room?.participants.get(userId);
+
+      if (!room || !participant) {
+        const found = findParticipantByWs(ws);
+        if (found) {
+          room = found.room;
+          participant = found.participant;
+        }
+      }
 
       if (!room || !participant) {
         ws.send(
@@ -110,8 +152,18 @@ export async function handleMessage(ws: WebSocket, message: string) {
     case MeetingRoomEvents.Produce: {
       const { roomId, userId, transportId, kind, rtpParameters, appData } =
         msg.data;
-      const room = roomsMap.get(roomId);
-      const participant = room?.participants.get(userId);
+
+      // Try to find room/participant from message data first, then fallback to WS lookup
+      let room = roomId ? roomsMap.get(roomId) : undefined;
+      let participant = room?.participants.get(userId);
+
+      if (!room || !participant) {
+        const found = findParticipantByWs(ws);
+        if (found) {
+          room = found.room;
+          participant = found.participant;
+        }
+      }
 
       if (!room || !participant || !participant.sendTransport) {
         ws.send(

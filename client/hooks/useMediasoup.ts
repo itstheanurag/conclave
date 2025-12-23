@@ -64,17 +64,18 @@ export const useMediasoup = ({
             isHost: false,
           };
         } else {
+          // Clone the participant to trigger React re-render
           participant = { ...participant };
         }
 
-        // Remove old track (same kind)
-        const oldTrack = participant.stream
-          ?.getTracks()
-          .find((t) => t.kind === track.kind);
-        if (oldTrack) participant.stream?.removeTrack(oldTrack);
+        // Get existing tracks (excluding old track of same kind)
+        const existingTracks =
+          participant.stream
+            ?.getTracks()
+            .filter((t) => t.kind !== track.kind) ?? [];
 
-        // Add new track
-        participant.stream?.addTrack(track);
+        // Create a NEW MediaStream with all tracks (so React detects the change)
+        participant.stream = new MediaStream([...existingTracks, track]);
 
         if (track.kind === "video" && !screenShare) {
           participant.isVideoOff = false;

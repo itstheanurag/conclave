@@ -1,7 +1,7 @@
 {
   "name": "server",
   "scripts": {
-    "mediasoup:build": "pnpm rebuild mediasoup",
+    "mediasoup:build": "node scripts/build-mediasoup.mjs",
     "prebuild": "pnpm run mediasoup:build",
     "build": "bun run src/index.ts",
     "dev": "bun --hot src/index.ts",

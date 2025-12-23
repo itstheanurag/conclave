@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { useRef, useEffect } from "react";
 import { MeetingParticipant } from "@/types/mediasoup";
 
 export default function ParticipantTile({
@@ -10,12 +10,17 @@ export default function ParticipantTile({
   participant: MeetingParticipant;
   isMe: boolean;
 }) {
-  /* Attach stream to video element */
-  const videoRef = (node: HTMLVideoElement | null) => {
-    if (node && participant.stream) {
-      node.srcObject = participant.stream;
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  /* Attach stream to video element - runs whenever stream changes */
+  useEffect(() => {
+    if (videoRef.current && participant.stream) {
+      // Only update if the srcObject is different
+      if (videoRef.current.srcObject !== participant.stream) {
+        videoRef.current.srcObject = participant.stream;
+      }
     }
-  };
+  }, [participant.stream]);
 
   const initials =
     participant.name?.slice(0, 2)?.toUpperCase() ??
