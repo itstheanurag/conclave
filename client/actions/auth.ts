@@ -1,13 +1,7 @@
 "use client";
 import { client } from "@/lib/auth-client";
 import { toastError, toastLoading, toastSuccess } from "@/lib/toast";
-import {
-  authFormAtom,
-  authModeAtom,
-  loadingSignUpFormAtom,
-  loadingSignInFormAtom,
-} from "@/atoms";
-import { store } from "@/lib";
+import { useAuthStore } from "@/stores/authStore";
 
 // ─────────────────────────────
 // Helpers
@@ -21,25 +15,21 @@ function handleRememberMe(email: string, rememberMe: boolean) {
 }
 
 function clearAuthForm() {
-  const { rememberMe } = store.get(authFormAtom);
-  store.set(authFormAtom, {
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    rememberMe,
-    showPassword: false,
-  });
+  const { formData, resetFormData, updateFormData } = useAuthStore.getState();
+  const { rememberMe } = formData;
+  resetFormData();
+  updateFormData({ rememberMe });
 }
 
 // ─────────────────────────────
 // SIGN UP
 // ─────────────────────────────
 export async function handleEmailSignup() {
-  const { fullName, email, password, rememberMe } = store.get(authFormAtom);
+  const { formData, setLoadingSignUp } = useAuthStore.getState();
+  const { fullName, email, password, rememberMe } = formData;
 
   const t = toastLoading("Creating account...");
-  store.set(loadingSignUpFormAtom, true);
+  setLoadingSignUp(true);
 
   try {
     const result = await client.signUp.email({
@@ -57,11 +47,12 @@ export async function handleEmailSignup() {
     handleRememberMe(email, rememberMe);
     clearAuthForm();
     return result;
-  } catch (err: any) {
-    toastError(err.message || "Signup failed.", t);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Signup failed.";
+    toastError(message, t);
     return null;
   } finally {
-    store.set(loadingSignUpFormAtom, false);
+    setLoadingSignUp(false);
   }
 }
 
@@ -69,10 +60,11 @@ export async function handleEmailSignup() {
 // LOGIN
 // ─────────────────────────────
 export async function handleEmailLogin() {
-  const { email, password, rememberMe } = store.get(authFormAtom);
+  const { formData, setLoadingSignIn } = useAuthStore.getState();
+  const { email, password, rememberMe } = formData;
 
   const t = toastLoading("Signing in...");
-  store.set(loadingSignInFormAtom, true);
+  setLoadingSignIn(true);
 
   try {
     const result = await client.signIn.email({
@@ -90,11 +82,12 @@ export async function handleEmailLogin() {
 
     clearAuthForm();
     return result;
-  } catch (err: any) {
-    toastError(err.message || "Failed to sign in.", t);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to sign in.";
+    toastError(message, t);
     return null;
   } finally {
-    store.set(loadingSignInFormAtom, false);
+    setLoadingSignIn(false);
   }
 }
 
@@ -116,13 +109,14 @@ export async function handleSocialAuth({
   errorMessage: string;
   callbackURL: string;
 }) {
-  const { email, rememberMe } = store.get(authFormAtom);
+  const { formData, setLoadingSignIn, setLoadingSignUp } =
+    useAuthStore.getState();
+  const { email, rememberMe } = formData;
 
   const t = toastLoading(loadingMessage);
-  const loadingAtom =
-    mode === "signin" ? loadingSignInFormAtom : loadingSignUpFormAtom;
+  const setLoading = mode === "signin" ? setLoadingSignIn : setLoadingSignUp;
 
-  store.set(loadingAtom, true);
+  setLoading(true);
 
   try {
     const result = await client.signIn.social({
@@ -139,11 +133,12 @@ export async function handleSocialAuth({
     handleRememberMe(email, rememberMe);
     clearAuthForm();
     return result;
-  } catch (err: any) {
-    toastError(err.message || errorMessage, t);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : errorMessage;
+    toastError(message, t);
     return null;
   } finally {
-    store.set(loadingAtom, false);
+    setLoading(false);
   }
 }
 
@@ -200,7 +195,8 @@ export async function registerWithGithub() {
 export async function logout() {
   try {
     const result = await client.signOut();
-    store.set(authModeAtom, "login");
+    const { setAuthMode } = useAuthStore.getState();
+    setAuthMode("login");
     clearAuthForm();
     return result;
   } catch (err) {
