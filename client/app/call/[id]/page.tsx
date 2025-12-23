@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import MeetingHeader from "@/components/call/header";
 import MeetingChat from "@/components/call/MeetingChat";
 import SidebarParticipants from "@/components/call/participants";
@@ -9,17 +9,29 @@ import { useParams, useRouter } from "next/navigation";
 import { useMediasoup } from "@/hooks/useMediasoup";
 import MeetingControlDock from "@/components/call/MeetingControl";
 import ParticipantTile from "@/components/call/participant-tile";
+import { useCallStore, ChatMessage } from "@/stores/callStore";
 
 export default function CallPage() {
   const { id } = useParams();
   const router = useRouter();
   const roomId = id as string;
 
-  const [userId] = useState(() => Math.random().toString(36).substring(2, 15));
-  const [messages, setMessages] = useState<any[]>([]);
-  const [showParticipants, setShowParticipants] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [message, setMessage] = useState("");
+  // Get state and actions from Zustand stores
+  const {
+    userId,
+    messages,
+    showParticipants,
+    showChat,
+    currentMessage,
+    setUserId,
+    setRoomId,
+    addMessage,
+    setCurrentMessage,
+    toggleChat,
+    toggleParticipants,
+    closeChat,
+    closeParticipants,
+  } = useCallStore();
 
   const {
     participants,
@@ -39,50 +51,64 @@ export default function CallPage() {
     websocketUrl: "ws://localhost:3001",
   });
 
+  /* Initialize userId and roomId */
+  useEffect(() => {
+    const generatedId = Math.random().toString(36).substring(2, 15);
+    setUserId(generatedId);
+    setRoomId(roomId);
+  }, [roomId, setUserId, setRoomId]);
+
   /* Auto Start Media */
   useEffect(() => {
-    if (isDeviceLoaded) {
+    if (isDeviceLoaded && userId) {
       startMedia(true, true);
     }
 
     return () => {
       stopMedia();
     };
-  }, [isDeviceLoaded]);
+  }, [isDeviceLoaded, userId, startMedia, stopMedia]);
 
   /* Send Chat */
   const handleSendMessage = () => {
-    if (!message.trim()) return;
+    if (!currentMessage.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        sender: "You",
-        text: message,
-        isMe: true,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
+    const newMessage: ChatMessage = {
+      id: messages.length + 1,
+      sender: "You",
+      text: currentMessage,
+      isMe: true,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
 
-    setMessage("");
+    addMessage(newMessage);
+    setCurrentMessage("");
   };
 
   /* Participant Control */
-  const handleMuteToggle = (id: string) => {
-    if (id === userId) toggleMic();
+  const handleMuteToggle = (participantId: string) => {
+    if (participantId === userId) toggleMic();
   };
 
-  const handleVideoToggle = (id: string) => {
-    if (id === userId) toggleCamera();
+  const handleVideoToggle = (participantId: string) => {
+    if (participantId === userId) toggleCamera();
   };
 
   const handleLeave = () => {
     router.push("/dashboard");
   };
+
+  // Don't render until userId is set
+  if (!userId) {
+    return (
+      <div className="h-screen w-full bg-base-100 flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-full bg-base-100 flex flex-col font-sans">
@@ -125,17 +151,17 @@ export default function CallPage() {
           {showParticipants ? (
             <SidebarParticipants
               participants={Array.from(participants.values())}
-              onClose={() => setShowParticipants(false)}
+              onClose={closeParticipants}
               onMuteToggle={handleMuteToggle}
-              onRemove={(id) => console.log("Remove participant", id)}
+              onRemove={(participantId) => console.log("Remove participant", participantId)}
             />
           ) : showChat ? (
             <MeetingChat
               messages={messages}
-              message={message}
-              setMessage={setMessage}
+              message={currentMessage}
+              setMessage={setCurrentMessage}
               handleSendMessage={handleSendMessage}
-              onClose={() => setShowChat(false)}
+              onClose={closeChat}
             />
           ) : null}
         </aside>
