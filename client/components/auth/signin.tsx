@@ -1,45 +1,42 @@
 "use client";
 
-import { useAtom } from "jotai";
-import {
-  authFormAtom,
-  authModeAtom,
-  loadingSignInFormAtom,
-  isLoginFormValidAtom,
-} from "@/atoms/auth";
-import { handleEmailLogin } from "@/actions/auth";
-import { GithubSignInButton } from "@/components/ui/buttons/github/signIn";
 import { useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { handleEmailLogin } from "@/actions/auth";
+import { GithubSignInButton } from "@/components/ui/buttons/github/signIn";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function LoginForm() {
-  const [form, setForm] = useAtom(authFormAtom);
-  const [, setAuthMode] = useAtom(authModeAtom);
-  const [loading, setLoading] = useAtom(loadingSignInFormAtom);
-  const [isValid] = useAtom(isLoginFormValidAtom);
+  const {
+    formData,
+    loadingSignIn,
+    updateFormData,
+    setAuthMode,
+    setLoadingSignIn,
+    toggleShowPassword,
+    isLoginFormValid,
+  } = useAuthStore();
 
   useEffect(() => {
     const rememberedEmail = localStorage.getItem("rememberedEmail");
 
     if (rememberedEmail) {
-      setForm((prev) => ({ ...prev, email: rememberedEmail }));
+      updateFormData({ email: rememberedEmail });
     }
-  }, [setForm]);
-
-  const updateField = (field: keyof typeof form, value: string | boolean) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  }, [updateFormData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValid) return;
+    if (!isLoginFormValid()) return;
 
-    setLoading(true);
+    setLoadingSignIn(true);
     const result = await handleEmailLogin();
-    setLoading(false);
+    setLoadingSignIn(false);
 
     if (result) window.location.href = "/dashboard";
   };
+
+  const isValid = isLoginFormValid();
 
   return (
     <div className="card py-4 bg-base-300">
@@ -55,8 +52,8 @@ export default function LoginForm() {
               placeholder="you@example.com"
               className="input input-bordered w-full focus:outline-none focus:ring-0 focus:border-base-300"
               required
-              value={form.email}
-              onChange={(e) => updateField("email", e.target.value)}
+              value={formData.email}
+              onChange={(e) => updateFormData({ email: e.target.value })}
             />
           </div>
 
@@ -68,20 +65,20 @@ export default function LoginForm() {
 
             <div className="relative">
               <input
-                type={form.showPassword ? "text" : "password"}
+                type={formData.showPassword ? "text" : "password"}
                 placeholder="********"
                 className="input input-bordered w-full pr-10"
-                value={form.password}
-                onChange={(e) => updateField("password", e.target.value)}
+                value={formData.password}
+                onChange={(e) => updateFormData({ password: e.target.value })}
                 required
               />
               <button
                 type="button"
-                onClick={() => updateField("showPassword", !form.showPassword)}
+                onClick={toggleShowPassword}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 tabIndex={-1}
               >
-                {form.showPassword ? (
+                {formData.showPassword ? (
                   <EyeOff className="w-5 h-5" />
                 ) : (
                   <Eye className="w-5 h-5" />
@@ -95,8 +92,8 @@ export default function LoginForm() {
                   type="checkbox"
                   id="rememberMe"
                   className="w-4 h-4 rounded-sm checkbox-primary"
-                  checked={form.rememberMe}
-                  onChange={(e) => updateField("rememberMe", e.target.checked)}
+                  checked={formData.rememberMe}
+                  onChange={(e) => updateFormData({ rememberMe: e.target.checked })}
                 />
                 <label htmlFor="rememberMe" className="label-text">
                   Remember me
@@ -118,10 +115,10 @@ export default function LoginForm() {
           {/* Submit button */}
           <button
             type="submit"
-            disabled={loading || !isValid}
+            disabled={loadingSignIn || !isValid}
             className="btn btn-primary w-full"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loadingSignIn ? "Signing in..." : "Sign In"}
           </button>
 
           <div className="divider">Or continue with</div>
@@ -129,7 +126,7 @@ export default function LoginForm() {
           <GithubSignInButton />
 
           <p className="text-sm text-center mt-3">
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <button
               type="button"
               className="link link-primary"

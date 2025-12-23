@@ -1,16 +1,20 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { useAtom } from "jotai";
-import { meetingsAtom, currentMeetingAtom, usernameAtom } from "@/atoms";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import MeetingList from "./MeetingLists";
 import MeetingDetails from "./MeetingDetails";
+import { useMeetingsStore } from "@/stores/meetingsStore";
 
 export default function MeetingsPage() {
-  const [meetings, setMeetings] = useAtom(meetingsAtom);
+  const {
+    meetings,
+    currentMeetingId,
+    username,
+    setMeetings,
+    setCurrentMeetingId,
+    setUsername,
+  } = useMeetingsStore();
 
-  const [currentMeeting, setCurrentMeeting] = useAtom(currentMeetingAtom);
-  const [username, setUsername] = useAtom(usernameAtom);
   const [loading, setLoading] = useState(false);
   const API_URL = "http://localhost:8080/api";
 
@@ -40,7 +44,7 @@ export default function MeetingsPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to create meeting");
-      const newMeeting = await res.json();
+      // const newMeeting = await res.json();
       toast.success("Meeting created");
       fetchMeetings();
     } catch (err) {
@@ -51,7 +55,7 @@ export default function MeetingsPage() {
 
   useEffect(() => {
     fetchMeetings();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="p-6 space-y-6">
@@ -82,9 +86,9 @@ export default function MeetingsPage() {
           meetings={meetings}
           loading={loading}
           onRefresh={fetchMeetings}
-          onSelect={(id) => setCurrentMeeting(id)}
+          onSelect={setCurrentMeetingId}
         />
-        <MeetingDetails meetingId={currentMeeting} />
+        <MeetingDetails meetingId={currentMeetingId} />
       </div>
     </div>
   );

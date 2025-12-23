@@ -4,10 +4,9 @@ import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import NavLinks from "../molecules/Navlinks";
-import { menuOpenAtom } from "@/atoms/ui";
-import { useAtom } from "jotai";
 import Button from "../ui/Button";
 import ThemeSelectionModal from "../modals/ThemeSelectionModal";
+import { useUIStore } from "@/stores/uiStore";
 
 const links = [
   { label: "Home", link: "/" },
@@ -17,7 +16,7 @@ const links = [
 ];
 
 const SimpleNavbar = () => {
-  const [menuOpen, setMenuOpen] = useAtom(menuOpenAtom);
+  const { menuOpen, toggleMenu } = useUIStore();
   const [themeModalOpen, setThemeModalOpen] = useState(false);
   const router = useRouter();
   const handleGetStarted = () => router.push("/auth");
@@ -45,7 +44,7 @@ const SimpleNavbar = () => {
 
           {/* Mobile menu button */}
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={toggleMenu}
             className="md:hidden btn btn-ghost btn-square"
           >
             {menuOpen ? (

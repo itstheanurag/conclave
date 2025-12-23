@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+
 import { useSession } from "@/hooks/useSession";
+import { useDashboardStore } from "@/stores/dashboardStore";
 import DashboardNavbar from "./navbar";
 import OverviewTab from "./overview";
 import Sidebar from "./sidebar";
@@ -16,7 +17,7 @@ export default function DashboardLayoutClient({
   children,
 }: DashboardLayoutClientProps) {
   const { session, loading } = useSession();
-  const [activeTab, setActiveTab] = useState("overview");
+  const { activeTab } = useDashboardStore();
 
   if (loading || !session) {
     return (
@@ -30,7 +31,7 @@ export default function DashboardLayoutClient({
     switch (activeTab) {
       case "overview":
         return <OverviewTab sessionData={session} />;
-      case "api_keys":
+      case "apikeys":
         return <ApiKeysTab sessionData={session} />;
       case "projects":
         return <ProjectsDashboardTab sessionData={session} />;
@@ -54,7 +55,7 @@ export default function DashboardLayoutClient({
 
   return (
     <div className="flex h-screen bg-base-100">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardNavbar sessionData={session} />

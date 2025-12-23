@@ -1,61 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Zap } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { SessionData } from "@/types/session";
 import { ApiKeyCreateModal } from "@/components/modals/CreateApiKeyModal";
-import { ApiKey } from "@/types/dashboard";
 import { ApiKeysTable } from "./ApiKeysTable";
 import { ApiKeyDetails } from "./ApiKeyDetails";
+import { useApiKeyStore } from "@/stores/apiKeyStore";
 
 interface ApiKeysTabProps {
   sessionData?: SessionData;
 }
 
-const dummyKeys: ApiKey[] = [
-  {
-    id: "key_1",
-    name: "Frontend Service",
-    key: "sk_test_frontend_12345",
-    createdAt: new Date().toISOString(),
-    lastUsedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
-  },
-  {
-    id: "key_2",
-    name: "Backend Worker",
-    key: "sk_test_backend_67890",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
-    lastUsedAt: null,
-  },
-];
-
 export default function ApiKeysTab({ sessionData }: ApiKeysTabProps) {
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const [showCreate, setShowCreate] = useState(false);
-  const [selected, setSelected] = useState<ApiKey | null>(null);
+  const {
+    keys,
+    loading,
+    selected,
+    showCreateModal,
+    setLoading,
+    selectKey,
+    openCreateModal,
+    closeCreateModal,
+    addKey,
+    removeKey,
+    loadDummyData,
+  } = useApiKeyStore();
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setKeys(dummyKeys);
-      setLoading(false);
-    }, 500);
-  }, []);
-  
+    loadDummyData();
+  }, [loadDummyData]);
 
   function handleRevoke(id: string) {
-    // Simulate revoke
-    setKeys((prev) => prev.filter((k) => k.id !== id));
-    if (selected?.id === id) setSelected(null);
+    removeKey(id);
   }
 
-  function handleCreate(newKey: ApiKey) {
-    // Simulate create
-    setKeys((prev) => [newKey, ...prev]);
-    setShowCreate(false);
+  function handleCreate() {
+    const newKey = {
+      id: `key_${Date.now()}`,
+      name: "Newly Created Key",
+      key: `sk_test_${Math.random().toString(36).slice(2, 10)}`,
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+    };
+    addKey(newKey);
+    closeCreateModal();
   }
 
   return (
@@ -68,7 +58,7 @@ export default function ApiKeysTab({ sessionData }: ApiKeysTabProps) {
           </p>
         </div>
 
-        <Button onClick={() => setShowCreate(true)}>
+        <Button onClick={openCreateModal}>
           <Zap className="w-4 h-4 mr-2" /> New API Key
         </Button>
       </div>
@@ -76,29 +66,21 @@ export default function ApiKeysTab({ sessionData }: ApiKeysTabProps) {
       <ApiKeysTable
         keys={keys}
         loading={loading}
-        onSelect={setSelected}
+        onSelect={selectKey}
         onRevoke={handleRevoke}
       />
 
-      {showCreate && (
+      {showCreateModal && (
         <ApiKeyCreateModal
-          onClose={() => setShowCreate(false)}
-          onCreated={() =>
-            handleCreate({
-              id: `key_${Date.now()}`,
-              name: "Newly Created Key",
-              key: `sk_test_${Math.random().toString(36).slice(2, 10)}`,
-              createdAt: new Date().toISOString(),
-              lastUsedAt: null,
-            })
-          }
+          onClose={closeCreateModal}
+          onCreated={handleCreate}
         />
       )}
 
       {selected && (
         <ApiKeyDetails
           keyData={selected}
-          onClose={() => setSelected(null)}
+          onClose={() => selectKey(null)}
           onRevoke={handleRevoke}
         />
       )}

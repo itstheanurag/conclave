@@ -1,34 +1,33 @@
 "use client";
 
-import { useAtom } from "jotai";
 import { useRouter } from "next/navigation";
-import { loadingAtom } from "@/atoms";
 import { signInWithGoogle } from "@/actions";
+import { useAuthStore } from "@/stores/authStore";
 
 export function GoogleSignInButton() {
-  const [loading, setLoading] = useAtom(loadingAtom);
+  const { loadingSignIn, setLoadingSignIn } = useAuthStore();
   const router = useRouter();
 
   const handleClick = async () => {
-    setLoading(true);
+    setLoadingSignIn(true);
     try {
       const data = await signInWithGoogle();
 
-      if(data) {
+      if (data) {
         router.push("/dashboard");
       }
     } finally {
-      setLoading(false);
+      setLoadingSignIn(false);
     }
   };
 
   return (
     <button
       onClick={handleClick}
-      disabled={loading}
+      disabled={loadingSignIn}
       className="btn btn-outline w-full"
     >
-      {loading ? "Signing in..." : "Sign in with Google"}
+      {loadingSignIn ? "Signing in..." : "Sign in with Google"}
     </button>
   );
 }

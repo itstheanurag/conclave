@@ -1,21 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useAtom } from "jotai";
-import { meetingDetailsAtom, currentMeetingAtom, meetingsAtom } from "@/atoms";
-import { MeetingDetails as MeetingDetailsType } from "@/types";
+import Link from "next/link";
 import MeetingMessages from "./MeetingMessages";
 import MeetingRecordings from "./MeetingRecordings";
 import MeetingParticipants from "./MeetingParticipants";
-import Link from "next/link";
+import { useMeetingsStore } from "@/stores/meetingsStore";
 
 export default function MeetingDetails({
   meetingId,
 }: {
   meetingId?: string | null;
 }) {
-  const [details, setDetails] = useAtom(meetingDetailsAtom);
+  const { meetingDetails: details, setMeetingDetails: setDetails } = useMeetingsStore();
   const [loading, setLoading] = useState(false);
-  const [meetings] = useAtom(meetingsAtom);
 
   const API_URL = "http://localhost:8080/api";
 

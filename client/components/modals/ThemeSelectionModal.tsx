@@ -2,10 +2,9 @@
 
 import { useTheme } from "next-themes";
 import React, { useEffect, useState } from "react";
-import { useAtom } from "jotai";
-import { themeAtom } from "@/atoms/ui";
 import { cn } from "@/lib/utils";
 import { Palette } from "lucide-react";
+import { useUIStore } from "@/stores/uiStore";
 
 const RECOMMENDED_THEMES = [
   "dark",
@@ -40,7 +39,7 @@ export default function ThemeSelectionModal({
 }) {
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [currentTheme, setCurrentTheme] = useAtom(themeAtom);
+  const { currentTheme, setCurrentTheme } = useUIStore();
 
   useEffect(() => setMounted(true), []);
 

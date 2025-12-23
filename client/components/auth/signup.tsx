@@ -1,31 +1,27 @@
 "use client";
 
-import { useAtom } from "jotai";
 import { Eye, EyeOff } from "lucide-react";
-import {
-  authFormAtom,
-  authModeAtom,
-  loadingSignUpFormAtom,
-  isRegisterFormValidAtom,
-} from "@/atoms/auth";
 import { handleEmailSignup } from "@/actions";
 import { GithubSignUpButton } from "../ui/buttons/github/singup";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function SignupForm() {
-  const [form, setForm] = useAtom(authFormAtom);
-  const [, setAuthMode] = useAtom(authModeAtom);
-  const [loading] = useAtom(loadingSignUpFormAtom);
-  const [isValid] = useAtom(isRegisterFormValidAtom);
+  const {
+    formData,
+    loadingSignUp,
+    updateFormData,
+    setAuthMode,
+    toggleShowPassword,
+    isRegisterFormValid,
+  } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValid) return;
+    if (!isRegisterFormValid()) return;
     await handleEmailSignup();
   };
 
-  const updateField = (field: keyof typeof form, value: string | boolean) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const isValid = isRegisterFormValid();
 
   return (
     <div className="card bg-base-300">
@@ -40,8 +36,8 @@ export default function SignupForm() {
               type="text"
               placeholder="John Doe"
               className="input input-bordered w-full"
-              value={form.fullName}
-              onChange={(e) => updateField("fullName", e.target.value)}
+              value={formData.fullName}
+              onChange={(e) => updateFormData({ fullName: e.target.value })}
               required
             />
           </div>
@@ -55,8 +51,8 @@ export default function SignupForm() {
               type="email"
               placeholder="you@example.com"
               className="input input-bordered w-full"
-              value={form.email}
-              onChange={(e) => updateField("email", e.target.value)}
+              value={formData.email}
+              onChange={(e) => updateFormData({ email: e.target.value })}
               required
             />
           </div>
@@ -68,20 +64,20 @@ export default function SignupForm() {
             </label>
             <div className="relative">
               <input
-                type={form.showPassword ? "text" : "password"}
+                type={formData.showPassword ? "text" : "password"}
                 placeholder="********"
                 className="input input-bordered w-full pr-10"
-                value={form.password}
-                onChange={(e) => updateField("password", e.target.value)}
+                value={formData.password}
+                onChange={(e) => updateFormData({ password: e.target.value })}
                 required
               />
               <button
                 type="button"
-                onClick={() => updateField("showPassword", !form.showPassword)}
+                onClick={toggleShowPassword}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 tabIndex={-1}
               >
-                {form.showPassword ? (
+                {formData.showPassword ? (
                   <EyeOff className="w-5 h-5" />
                 ) : (
                   <Eye className="w-5 h-5" />
@@ -99,18 +95,18 @@ export default function SignupForm() {
               type="password"
               placeholder="********"
               className="input input-bordered w-full"
-              value={form.confirmPassword}
-              onChange={(e) => updateField("confirmPassword", e.target.value)}
+              value={formData.confirmPassword}
+              onChange={(e) => updateFormData({ confirmPassword: e.target.value })}
               required
             />
           </div>
 
           <button
             type="submit"
-            disabled={!isValid || loading}
+            disabled={!isValid || loadingSignUp}
             className="btn btn-primary w-full"
           >
-            {loading ? "Creating account..." : "Create Account"}
+            {loadingSignUp ? "Creating account..." : "Create Account"}
           </button>
 
           <div className="divider">Or continue with</div>
